@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+const DataTypes = require("sequelize")
 
 const sequelize = require("../config/dbConfig");
 
@@ -18,16 +18,7 @@ const News = sequelize.define('News', {
         type: DataTypes.BLOB, // Assuming the image is stored as a BLOB in the database
         allowNull: true
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-    }
+   
 }, {
     tableName: 'news',
     timeStamp :true

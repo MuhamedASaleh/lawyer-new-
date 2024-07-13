@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+const DataTypes = require("sequelize")
 
 const sequelize = require("../config/dbConfig");
 
@@ -25,7 +25,7 @@ const Case = sequelize.define(
        
       },
       files: {
-        type: DataTypes.STRING,
+        type: DataTypes.BLOB,
         allowNull: true
       },
       payment: {

@@ -9,28 +9,28 @@ const UserCase = sequelize.define('UserCase', {
         autoIncrement: true,
         primaryKey: true
     },
-    userID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'User', // Assuming your User model is named 'User'
-            key: 'userID'
-        }
-    },
-    caseID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'Case', // Assuming your Case model is named 'Case'
-            key: 'caseID'
-        }
-    },
+    // userID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'User', // Assuming your User model is named 'User'
+    //         key: 'userID'
+    //     }
+    // },
+    // caseID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'Case', // Assuming your Case model is named 'Case'
+    //         key: 'caseID'
+    //     }
+    // },
     role: {
         type: DataTypes.ENUM('customer', 'lawyer'),
         allowNull: false
     }
 }, {
-    tableName: 'user_cases',
+    tableName: 'userCases',
     timestamps: true
 });
 

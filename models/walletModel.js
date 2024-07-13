@@ -9,14 +9,14 @@ const Wallet = sequelize.define('Wallet', {
         autoIncrement: true,
         primaryKey: true
     },
-    userID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users', // Name of the User table
-            key: 'userID'
-        }
-    },
+    // userID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'users', // Name of the User table
+    //         key: 'userID'
+    //     }
+    // },
     balance: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
@@ -27,16 +27,7 @@ const Wallet = sequelize.define('Wallet', {
         allowNull: false,
         defaultValue: 'KWD'
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
-    }
+  
 }, {
     tableName: 'wallets',
     // updatedAt: 'updatedAt', // Rename default updatedAt field to match the column name

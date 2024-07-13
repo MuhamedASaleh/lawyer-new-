@@ -1,5 +1,4 @@
-import { DataTypes } from 'sequelize';
-
+const DataTypes = require("sequelize")
 const sequelize = require("../config/dbConfig");
 
 
@@ -9,14 +8,14 @@ const Notification = sequelize.define('Notification', {
         autoIncrement: true,
         primaryKey: true
     },
-    userID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users', // Assuming 'users' is the name of your User table
-            key: 'userID'
-        }
-    },
+    // userID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'users', // Assuming 'users' is the name of your User table
+    //         key: 'userID'
+    //     }
+    // },
     message: {
         type: DataTypes.TEXT,
         allowNull: false
@@ -26,16 +25,7 @@ const Notification = sequelize.define('Notification', {
         allowNull: false,
         defaultValue: false // Default to unread
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-    }
+  
 }, {
     tableName: 'notifications',
     updatedAt: 'updatedAt', // Rename default updatedAt field to match the column name

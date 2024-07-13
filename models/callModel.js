@@ -1,5 +1,4 @@
-import { DataTypes } from 'sequelize';
-
+const DataTypes = require("sequelize")
 const sequelize = require("../config/dbConfig");
 
 
@@ -9,22 +8,22 @@ const Call = sequelize.define('Call', {
         autoIncrement: true,
         primaryKey: true
     },
-    callerID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users', // Assuming 'users' is the name of your User table
-            key: 'userID'
-        }
-    },
-    lawyerID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users', // Assuming 'users' is the name of your User table
-            key: 'userID'
-        }
-    },
+    // callerID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'users', // Assuming 'users' is the name of your User table
+    //         key: 'userID'
+    //     }
+    // },
+    // lawyerID: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     references: {
+    //         model: 'users', // Assuming 'users' is the name of your User table
+    //         key: 'userID'
+    //     }
+    // },
     startTime: {
         type: DataTypes.DATE,
         allowNull: false
