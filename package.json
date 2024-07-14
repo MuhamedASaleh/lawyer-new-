@@ -23,7 +23,7 @@
     "mysql2": "^3.10.2",
     "nodemon": "^3.1.4",
     "retry-as-promised": "^7.0.4",
-    "sequelize": "^6.37.3",
-    "vercel": "^34.3.1"
+    "sequelize": "^6.37.3"
+    
   }
 }
