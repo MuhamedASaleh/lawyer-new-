@@ -6,6 +6,11 @@ const cors = require("cors");
 var bodyParser = require("body-parser");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const adminRoutes =require('./routes/admin/adminRoutes')
+
+
+
 
 const app = express();
  let port =process.env.PORT || 8000 ;
@@ -51,6 +56,11 @@ app.use(express.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+// Use the news routes
+app.use('/', newsRoutes);
+
+// Use the admin routes
+app.use('/api', adminRoutes);
 
 
 
