@@ -11,7 +11,7 @@ const app = express();
  let port = 8000 ;
 
 
-app.get('/', async(req, res) => {
+app.get('/api', async(req, res) => {
 //   await News.create({
 //     description:"desc",
 //     image:"https://bne.jpg"
