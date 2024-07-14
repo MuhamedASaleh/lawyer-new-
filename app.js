@@ -8,10 +8,10 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
- let port = 8000 ;
+ let port =process.env.PORT || 8000 ;
 
 
-app.get('/api', async(req, res) => {
+app.get('/', async(req, res) => {
 //   await News.create({
 //     description:"desc",
 //     image:"https://bne.jpg"
