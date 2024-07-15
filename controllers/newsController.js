@@ -12,7 +12,7 @@ const createNews = async (req, res) => {
             return res.status(404).json({ message: 'Admin not found' });
         }
 
-        const news = await News.create({ description, image, adminID });
+        const news = await News.create({ description, image });
         res.status(201).json(news);
     } catch (error) {
         res.status(500).json({ message: error.message });
