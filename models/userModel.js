@@ -82,7 +82,7 @@ const User = sequelize.define('User', {
         }
     },
     certification: {
-        type: DataTypes.STRING,
+        type: DataTypes.BLOB,
         allowNull: true,
         validate: {
             isNullForCustomer(value) {
