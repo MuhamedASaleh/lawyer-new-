@@ -36,7 +36,7 @@ const userValidationSchema = Joi.object({
         }),
         otherwise: Joi.required(),
     }),
-    certification: Joi.string().allow(null).allow('').when('role', {
+    certification: Joi.binary().allow(null).allow('').when('role', {
         is: 'customer',
         then: Joi.valid(null).messages({
             'any.only': 'Certification must be null for customers',
