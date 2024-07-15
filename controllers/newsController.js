@@ -52,7 +52,7 @@ const updateNews = async (req, res) => {
 
         res.status(200).json(news);
     } catch (error) {
-        res.status{500}.json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 

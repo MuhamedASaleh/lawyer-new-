@@ -7,8 +7,9 @@ const User = require ("../models/userModel")
 const UserCase = require ("../models/userCaseModel")
 const Wallet = require ("../models/walletModel")
 const sequelize = require ("../config/dbConfig")
+const { alter } = require("../Validations/userValidator")
 
-sequelize.sync({force:true}
+sequelize.sync({force:alter}
 )
     .then(() => {
         console.log('Models synchronized successfully.');
