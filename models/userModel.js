@@ -80,9 +80,20 @@ const User = sequelize.define('User', {
                 }
             }
         }
+    },
+    certification: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isNullForCustomer(value) {
+                if (this.role === 'customer' && value !== null) {
+                    throw new Error('Certification must be null for customers');
+                }
+            }
+        }
     }
 }, {
     tableName: 'users'
 });
 
-module.exports = User
+module.exports = User;

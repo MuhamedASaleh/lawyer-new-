@@ -36,6 +36,15 @@ const userValidationSchema = Joi.object({
         }),
         otherwise: Joi.required(),
     }),
+    certification: Joi.string().allow(null).allow('').when('role', {
+        is: 'customer',
+        then: Joi.valid(null).messages({
+            'any.only': 'Certification must be null for customers',
+        }),
+        otherwise: Joi.required().messages({
+            'any.required': 'Certification is required for lawyers',
+        }),
+    }),
 });
 
-module.exports = userValidationSchema; 
+module.exports = userValidationSchema;
