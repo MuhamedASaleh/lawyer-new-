@@ -7,6 +7,10 @@ var bodyParser = require("body-parser");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const newsRoutes = require('./routes/newsRoutes');
+
+const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
+// const adminRoutes =require('./routes/admin/adminRoutes')
+
 const adminRoutes = require('./routes/admin/adminRoutes')
 const reviewRoutes = require('./routes/reviewRoute')
 const path = require('path')
@@ -53,6 +57,8 @@ app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 // Use the news routes
 app.use('/', newsRoutes);
+// Use the questionAnswers routes
+app.use('/api/questionAnswer', questionAnswerRoutes);
 
 // Use the admin routes
 app.use('/api', adminRoutes);

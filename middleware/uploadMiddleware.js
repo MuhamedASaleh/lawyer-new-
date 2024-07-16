@@ -21,4 +21,13 @@ const upload = multer({
     }
 });
 
-module.exports = upload;
+const uploadFields = [
+    { name: 'personal_image', maxCount: 1 },
+    { name: 'certification', maxCount: 1 }
+];
+
+module.exports = {
+    upload,
+    uploadFields
+};
+ 

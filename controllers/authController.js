@@ -8,10 +8,10 @@ const userValidator = require('../Validations/userValidator');
 exports.registerUser = async (req, res) => {
   try {
     // Validate user input
-    // const { error } = userValidator.validate(req.body);
-    // if (error) {
-    //   return res.status(400).json({ error: error.details[0].message });
-    // }
+    const { error } = userValidator.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
     // Destructure user data from request body
     const {
@@ -24,9 +24,9 @@ exports.registerUser = async (req, res) => {
       national_number,
       lawyer_price,
       specializations,
-      // certification,
+      certification,
     } = req.body;
-    const certificat = req.file
+
     // Check if the password and confirm_password match
     if (password !== confirm_password) {
       return res.status(400).json({ error: "Passwords don't match" });
@@ -48,13 +48,13 @@ exports.registerUser = async (req, res) => {
       specializations,
       certification: certificat
     });
-
+    
     // Generate JWT token
     const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     // Respond with the token
-    res.status(201).json({ "msg": "user has been created" });
-  }
+    res.status(201).json({"msg":"user has been created"  });
+  } 
   catch (error) {
     // Handle errors
     console.error('Error registering user:', error);
