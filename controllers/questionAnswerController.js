@@ -1,12 +1,19 @@
-const { QuestionAnswer } = require('../models/questionAnswerModel');
+const  QuestionAnswer  = require('../models/questionAnswerModel');
 
 // Controller function to create a new question-answer
 async function createQuestionAnswer(req, res) {
     const { question, answer } = req.body;
     try {
-        const newQuestionAnswer = await QuestionAnswer.create({ question, answer });
+        // Create a new QuestionAnswer record using Sequelize's create method
+        const newQuestionAnswer = await QuestionAnswer.create({
+            question,
+            answer
+        });
+
+        // Respond with the newly created QuestionAnswer object
         res.status(201).json(newQuestionAnswer);
     } catch (err) {
+        // Handle any errors that occur during creation
         console.error(err);
         res.status(500).json({ error: 'Error creating question and answer' });
     }

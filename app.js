@@ -7,13 +7,12 @@ var bodyParser = require("body-parser");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const newsRoutes = require('./routes/newsRoutes');
-<<<<<<< HEAD
+
 const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
-const adminRoutes =require('./routes/admin/adminRoutes')
-=======
+// const adminRoutes =require('./routes/admin/adminRoutes')
+
 const adminRoutes = require('./routes/admin/adminRoutes')
 const reviewRoutes = require('./routes/reviewRoute')
->>>>>>> c69375956770eb448d9edc72c39f9d5095d52d40
 
 
 

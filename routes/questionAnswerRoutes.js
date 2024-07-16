@@ -11,9 +11,9 @@ const {
     validateCreateQuestionAnswer,
     validateUpdateQuestionAnswer,
 } = require('../Validations/questionAnswerValidator');
-const validate = require('../middleware/validateRequest');
+// const validateRequest = require('../middleware/validateRequest');
 // Create a new question-answer
-router.post('/', validateCreateQuestionAnswer, createQuestionAnswer);
+router.post('/',  createQuestionAnswer);
 
 // Get all question-answers
 router.get('/', getAllQuestionAnswers);
@@ -22,7 +22,7 @@ router.get('/', getAllQuestionAnswers);
 router.get('/:id', getQuestionAnswer);
 
 // Update a question-answer
-router.put('/:id',validate( validateUpdateQuestionAnswer), updateQuestionAnswer);
+router.put('/:id', updateQuestionAnswer);
 
 // Delete a question-answer
 router.delete('/:id', deleteQuestionAnswer);
