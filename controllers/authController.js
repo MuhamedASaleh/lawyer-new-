@@ -1,17 +1,17 @@
 // controllers/authController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const  User  = require('../models/userModel.js');
+const User = require('../models/userModel.js');
 const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
 const userValidator = require('../Validations/userValidator');
 
 exports.registerUser = async (req, res) => {
   try {
     // Validate user input
-    const { error } = userValidator.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
+    // const { error } = userValidator.validate(req.body);
+    // if (error) {
+    //   return res.status(400).json({ error: error.details[0].message });
+    // }
 
     // Destructure user data from request body
     const {
@@ -24,9 +24,9 @@ exports.registerUser = async (req, res) => {
       national_number,
       lawyer_price,
       specializations,
-      certification,
+      // certification,
     } = req.body;
-
+    const certificat = req.file
     // Check if the password and confirm_password match
     if (password !== confirm_password) {
       return res.status(400).json({ error: "Passwords don't match" });
@@ -38,23 +38,23 @@ exports.registerUser = async (req, res) => {
     // Create user in the database
     const newUser = await User.create({
       role,
-      first_name, 
+      first_name,
       last_name,
       phone_number,
       password: hashedPassword,
-      confirm_password :hashedPassword,
+      confirm_password: hashedPassword,
       national_number,
       lawyer_price,
       specializations,
-      certification
+      certification: certificat
     });
-    
+
     // Generate JWT token
     const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     // Respond with the token
-    res.status(201).json({"msg":"user has been created"  });
-  } 
+    res.status(201).json({ "msg": "user has been created" });
+  }
   catch (error) {
     // Handle errors
     console.error('Error registering user:', error);
@@ -68,7 +68,7 @@ exports.loginUser = async (req, res) => {
     console.log('Login request received for phone_number:', phone_number);
 
     // Find user by phone_number
-    const user = await User.findOne({ where: { phone_number }  });
+    const user = await User.findOne({ where: { phone_number } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }

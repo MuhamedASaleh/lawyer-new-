@@ -9,21 +9,15 @@ const userRoutes = require('./routes/userRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const adminRoutes = require('./routes/admin/adminRoutes')
 const reviewRoutes = require('./routes/reviewRoute')
-
-
+const path = require('path')
 
 
 const app = express();
+app.use(express.static(path.join(__dirname, 'public/images')));
 let port = process.env.PORT || 5050;
 
 
 app.get('/', async (req, res) => {
-  //   await News.create({
-  //     description:"desc",
-  //     image:"https://bne.jpg"
-
-
-  //   })
   res.send('home')
 });
 

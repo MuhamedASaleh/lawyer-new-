@@ -38,13 +38,13 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(20),
         unique: true,
         allowNull: true,
-        validate: {
-            isNullForLawyer(value) {
-                if (this.role === 'lawyer' && value !== null) {
-                    throw new Error('National number must be null for lawyers');
-                }
-            }
-        }
+        // validate: {
+        //     isNullForLawyer(value) {
+        //         if (this.role === 'lawyer' && value !== null) {
+        //             throw new Error('National number must be null for lawyers');
+        //         }
+        //     }
+        // }
     },
     lawyer_price: {
         type: DataTypes.DECIMAL(10, 2),
@@ -82,15 +82,15 @@ const User = sequelize.define('User', {
         }
     },
     certification: {
-        type: DataTypes.BLOB,
+        type: DataTypes.STRING,
         allowNull: true,
-        validate: {
-            isNullForCustomer(value) {
-                if (this.role === 'customer' && value !== null) {
-                    throw new Error('Certification must be null for customers');
-                }
-            }
-        }
+        // validate: {
+        //     isNullForCustomer(value) {
+        //         if (this.role === 'customer' && value !== null) {
+        //             throw new Error('Certification must be null for customers');
+        //         }
+        //     }
+        // }
     }
 }, {
     tableName: 'users'

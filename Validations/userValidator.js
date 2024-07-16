@@ -10,13 +10,14 @@ const userValidationSchema = Joi.object({
         'any.only': 'Passwords must match',
     }),
     personal_image: Joi.binary(),
-    national_number: Joi.string().max(20).allow(null).allow('').when('role', {
-        is: 'lawyer',
-        then: Joi.valid(null).messages({
-            'any.only': 'National number must be null for lawyers',
-        }),
-        otherwise: Joi.required(),
-    }),
+    national_number: Joi.string(),
+    // .max(20).allow(null).allow('').when('role', {
+        // is: 'lawyer',
+        // then: Joi.valid(null).messages({
+        //     'any.only': 'National number must be null for lawyers',
+        // }),
+        // otherwise: Joi.required(),
+    // }),
     lawyer_price: Joi.number().precision(2).allow(null).allow('').when('role', {
         is: 'customer',
         then: Joi.valid(null).messages({
@@ -36,15 +37,15 @@ const userValidationSchema = Joi.object({
         }),
         otherwise: Joi.required(),
     }),
-    certification: Joi.binary().allow(null).allow('').when('role', {
-        is: 'customer',
-        then: Joi.valid(null).messages({
-            'any.only': 'Certification must be null for customers',
-        }),
-        otherwise: Joi.required().messages({
-            'any.required': 'Certification is required for lawyers',
-        }),
-    }),
+    // certification: Joi.binary().allow(null).allow('').when('role', {
+    //     is: 'customer',
+    //     then: Joi.valid(null).messages({
+    //         'any.only': 'Certification must be null for customers',
+    //     }),
+    //     otherwise: Joi.required().messages({
+    //         'any.required': 'Certification is required for lawyers',
+    //     }),
+    // }),
 });
 
 module.exports = userValidationSchema;
