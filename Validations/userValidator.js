@@ -41,9 +41,7 @@ const userValidationSchema = Joi.object({
         then: Joi.valid(null).messages({
             'any.only': 'Certification must be null for customers',
         }),
-        otherwise: Joi.required().messages({
-            'any.required': 'Certification is required for lawyers',
-        }),
+        
     }),
 });
 
