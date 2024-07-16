@@ -6,6 +6,6 @@ router.post('/review', reviewController.createReview);
 
 // Get all news
 router.post('/review', validate(createReviewSchema), reviewController.createReview);
-// router.get('/review', reviewController.getAllReview);
+router.get('/review', reviewController.getAllReview);
 
 module.exports = router;

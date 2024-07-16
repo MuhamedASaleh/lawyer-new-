@@ -10,7 +10,7 @@ const userValidationSchema = Joi.object({
         'any.only': 'Passwords must match',
     }),
     personal_image: Joi.binary(),
-    national_number: Joi.string(),
+    national_number: Joi.string()
     .max(20).allow(null).allow('').when('role', {
         is: 'lawyer',
         then: Joi.valid(null).messages({

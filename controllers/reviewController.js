@@ -32,25 +32,23 @@ exports.createReview = asyncHandler(async (req, res, next) => {
 
 
 
-// exports.getAllReview = asyncHandler(async (req, res, next) => {
+exports.getAllReview = asyncHandler(async (req, res, next) => {
+  // Fetch all reviews
+  const reviews = await Review.findAll({
+    order: [['createdAt', 'DESC']] // Ensure reviews are ordered by creation date
+});
 
-//     const reviews = await Review.findAll();
-//     res.status(200).json({ data: reviews });
-// });
+// Calculate the sum of ratings and the count of reviews
+const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+const countReviews = reviews.length;
 
-// exports.updateReview = asyncHandler(async (req, res, next) => {
-//     const { id } = req.params;
-//     const review = await Review.findByPk(id);
+// Calculate the average rating and round up
+const averageRating = Math.ceil(totalRatings / countReviews);
 
-//     if (!review) {
-//         throw new Api404Error('review not found')
-//     }
-//     const { rating, comment } = req.body;
+// Respond with the new review, the number of ratings, the average rating, and the latest review
+res.status(200).json({
+    numberOfRatings: countReviews,
+    ratingAverage: averageRating
+});;
+});
 
-//     blog.rating = rating || blog.rating;
-//     blog.comment = comment || blog.comment
-//     await blog.save();
-
-//     res.status(200).json({ data: blog })
-// }
-// )
