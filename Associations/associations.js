@@ -9,7 +9,7 @@ const User = require("../models/userModel");
 const UserCase = require("../models/userCaseModel");
 const Wallet = require("../models/walletModel");
 
-sequelize.sync({ force:true }) // or { alter: true }
+sequelize.sync({alter:true }) // or { alter: true }
     .then(() => {
         console.log('Models synchronized successfully.');
     })

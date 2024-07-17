@@ -9,7 +9,7 @@ const Admin = sequelize.define('Admin', {
     },
     national_number: {
         type: DataTypes.STRING(20),
-        unique: true,
+        unique: false,
         allowNull: true,
     },
     phoneNumber: {
