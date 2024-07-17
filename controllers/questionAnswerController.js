@@ -71,7 +71,7 @@ async function deleteQuestionAnswer(req, res) {
             return res.status(404).json({ error: 'Question-answer not found' });
         }
         await questionAnswer.destroy();
-        res.status(204).json();
+        res.status(200).json({ message: 'questionAnswer deleted' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error deleting question-answer' });
