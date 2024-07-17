@@ -76,7 +76,7 @@ const deleteAdmin = async (req, res) => {
         await admin.destroy();
         res.status(200).json({ message: 'Admin deleted' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status500().json({ message: error.message });
     }
 };
 
