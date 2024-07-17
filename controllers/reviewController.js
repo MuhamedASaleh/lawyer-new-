@@ -11,9 +11,7 @@ exports.createReview = asyncHandler(async (req, res, next) => {
     });
 
     // Fetch all reviews
-    const reviews = await Review.findAll({
-        order: [['createdAt', 'DESC']] // Ensure reviews are ordered by creation date
-    });
+    const reviews = await Review.findAll();
 
     // Calculate the sum of ratings and the count of reviews
     const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
@@ -34,9 +32,7 @@ exports.createReview = asyncHandler(async (req, res, next) => {
 
 exports.getAllReview = asyncHandler(async (req, res, next) => {
   // Fetch all reviews
-  const reviews = await Review.findAll({
-    order: [['createdAt', 'DESC']] // Ensure reviews are ordered by creation date
-});
+  const reviews = await Review.findAll();
 
 // Calculate the sum of ratings and the count of reviews
 const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
@@ -47,6 +43,7 @@ const averageRating = Math.ceil(totalRatings / countReviews);
 
 // Respond with the new review, the number of ratings, the average rating, and the latest review
 res.status(200).json({
+    reviews,
     numberOfRatings: countReviews,
     ratingAverage: averageRating
 });;
