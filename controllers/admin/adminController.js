@@ -1,5 +1,8 @@
 const Admin = require('../../models/adminModel');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET, JWT_EXPIRATION } = require('../../config/jwtConfig');
 
 // Create a new admin
 const createAdmin = async (req, res) => {
@@ -73,11 +76,61 @@ const deleteAdmin = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+async function registerAdmin(req, res) {
+    const { phoneNumber, password } = req.body;
+
+    try {
+        // Check if admin already exists
+        const existingAdmin = await Admin.findOne({ where: { phoneNumber } });
+        if (existingAdmin) {
+            return res.status(400).json({ error: 'Admin already exists' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new admin
+        const newAdmin = await Admin.create({ phoneNumber, password: hashedPassword });
+
+        res.status(201).json({ message: 'Admin registered successfully', admin: newAdmin });
+    } catch (err) {
+        console.error('Error registering admin:', err);
+        res.status(500).json({ error: 'Error registering admin', details: err.message });
+    }
+}
+async function loginAdmin(req, res) {
+    const { phoneNumber, password } = req.body;
+
+    try {
+        // Find the admin by phoneNumber
+        const admin = await Admin.findOne({ where: { phoneNumber } });
+        if (!admin) {
+            return res.status(400).json({ error: 'Invalid credentials' });
+        }
+
+        // Check if the password matches
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Invalid credentials' });
+        }
+
+        // Generate a JWT token
+        const token = jwt.sign({ adminID: admin.adminID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+
+        res.status(200).json({ message: 'Login successful', token });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error logging in' });
+    }
+}
+
 
 module.exports = {
     createAdmin,
     getAllAdmins,
     getAdminById,
     updateAdmin,
-    deleteAdmin
+    deleteAdmin,
+    registerAdmin,
+    loginAdmin
 };
