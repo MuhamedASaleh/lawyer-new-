@@ -8,7 +8,8 @@ const { JWT_SECRET, JWT_EXPIRATION } = require('../../config/jwtConfig');
 const createAdmin = async (req, res) => {
     try {
         const { phoneNumber, password } = req.body;
-        const admin = await Admin.create({ phoneNumber, password });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const admin = await Admin.create({ phoneNumber, password: hashedPassword });
         res.status(201).json(admin);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -51,7 +52,9 @@ const updateAdmin = async (req, res) => {
         }
 
         admin.phoneNumber = phoneNumber;
-        admin.password = password;
+        if (password) {
+            admin.password = await bcrypt.hash(password, 10); // Hash the new password
+        }
         await admin.save();
 
         res.status(200).json(admin);
@@ -76,8 +79,10 @@ const deleteAdmin = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-async function registerAdmin(req, res) {
-    const { phoneNumber, password ,national_number } = req.body;
+
+// Register a new admin
+const registerAdmin = async (req, res) => {
+    const { phoneNumber, password, national_number } = req.body;
 
     try {
         // Check if admin already exists
@@ -90,15 +95,17 @@ async function registerAdmin(req, res) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create a new admin
-        const newAdmin = await Admin.create({ phoneNumber, password: hashedPassword ,national_number });
+        const newAdmin = await Admin.create({ phoneNumber, password: hashedPassword, national_number });
 
         res.status(201).json({ message: 'Admin registered successfully', admin: newAdmin });
     } catch (err) {
         console.error('Error registering admin:', err);
         res.status(500).json({ error: 'Error registering admin', details: err.message });
     }
-}
-async function loginAdmin(req, res) {
+};
+
+// Admin login
+const loginAdmin = async (req, res) => {
     const { phoneNumber, password } = req.body;
 
     try {
@@ -122,8 +129,7 @@ async function loginAdmin(req, res) {
         console.error(err);
         res.status(500).json({ error: 'Error logging in' });
     }
-}
-
+};
 
 module.exports = {
     createAdmin,

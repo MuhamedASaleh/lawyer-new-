@@ -6,11 +6,11 @@ const Review = require ("../models/reviewModel")
 const User = require ("../models/userModel")
 const UserCase = require ("../models/userCaseModel")
 const Wallet = require ("../models/walletModel")
+const admin = require ("../models/adminModel")
 const sequelize = require ("../config/dbConfig")
-const { alter } = require("../Validations/userValidator")
+const  alter  = require("../Validations/userValidator")
 
-sequelize.sync({force:alter}
-)
+sequelize.sync({force:alter})
     .then(() => {
         console.log('Models synchronized successfully.');
     })
@@ -18,4 +18,4 @@ sequelize.sync({force:alter}
         console.error('Error synchronizing models:', error);
     });
     
-    module.exports = {Call,Case,News,Notification,Review,User,UserCase,Wallet} 
+    module.exports = {Call,Case,News,Notification,Review,User,UserCase,Wallet,admin} 
