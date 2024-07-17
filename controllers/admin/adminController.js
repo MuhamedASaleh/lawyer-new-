@@ -77,7 +77,7 @@ const deleteAdmin = async (req, res) => {
     }
 };
 async function registerAdmin(req, res) {
-    const { phoneNumber, password } = req.body;
+    const { phoneNumber, password ,national_number } = req.body;
 
     try {
         // Check if admin already exists
@@ -90,7 +90,7 @@ async function registerAdmin(req, res) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create a new admin
-        const newAdmin = await Admin.create({ phoneNumber, password: hashedPassword });
+        const newAdmin = await Admin.create({ phoneNumber, password: hashedPassword ,national_number });
 
         res.status(201).json({ message: 'Admin registered successfully', admin: newAdmin });
     } catch (err) {

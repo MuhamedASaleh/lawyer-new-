@@ -7,6 +7,18 @@ const Admin = sequelize.define('Admin', {
         autoIncrement: true,
         primaryKey: true
     },
+    national_number: {
+        type: DataTypes.STRING(20),
+        unique: true,
+        allowNull: true,
+        // validate: {
+        //     isNullForLawyer(value) {
+        //         if (this.role === 'lawyer' && value !== null) {
+        //             throw new Error('National number must be null for lawyers');
+        //         }
+        //     }
+        // }
+    },
     phoneNumber: {
         type: DataTypes.STRING,
         allowNull: false,
