@@ -56,7 +56,7 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 // Use the news routes
-app.use('/', newsRoutes);
+app.use('/api', newsRoutes);
 // Use the questionAnswers routes
 app.use('/api/questionAnswer', questionAnswerRoutes);
 
