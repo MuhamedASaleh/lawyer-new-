@@ -22,7 +22,7 @@ const User = sequelize.define('User', {
     phone_number: {
         type: DataTypes.STRING(15),
         allowNull: false,
-        unique: true,
+        unique:true,
     },
     password: {
         type: DataTypes.STRING(100),
@@ -37,7 +37,7 @@ const User = sequelize.define('User', {
     },
     national_number: {
         type: DataTypes.STRING(20),
-        allowNull: true,
+       
     },
     lawyer_price: {
         type: DataTypes.DECIMAL(10, 2),
@@ -68,7 +68,7 @@ const User = sequelize.define('User', {
     
     }
 }, {
-    tableName: 'users'
+    tableName: 'user'
 });
 
 // Add hooks to enforce validation

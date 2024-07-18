@@ -5,8 +5,8 @@ const Case = require("../models/caseModel");
 const News = require("../models/newsModel");
 const Notification = require("../models/notificationModel");
 const Review = require("../models/reviewModel");
-const User = require("../models/userModel");
 const UserCase = require("../models/userCaseModel");
+const User = require('../models/userModel');
 const Wallet = require("../models/walletModel");
 
 sequelize.sync({alter:true }) // or { alter: true }
@@ -18,4 +18,4 @@ sequelize.sync({alter:true }) // or { alter: true }
     });
 
 
-module.exports = { Call, Case, News, Notification, Review, User, UserCase, Wallet, Admin };
+module.exports = { Call, Case, News, Notification, Review, UserCase, Wallet, Admin ,User };

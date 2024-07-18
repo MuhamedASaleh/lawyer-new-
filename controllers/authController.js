@@ -3,15 +3,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel.js');
 const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
-const userValidator = require('../Validations/userValidator');
+// const userValidator = require('../Validations/userValidator');
 
 exports.registerUser = async (req, res) => {
   try {
-    // Validate user input
-    const { error } = userValidator.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
+
 
     // Destructure user data from request body
     const {
