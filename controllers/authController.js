@@ -22,7 +22,6 @@ exports.registerUser = async (req, res) => {
       password,
       confirm_password,
       national_number,
-      lawyer_price,
       specializations,
       certification,
     } = req.body;
@@ -44,21 +43,21 @@ exports.registerUser = async (req, res) => {
       password: hashedPassword,
       confirm_password: hashedPassword,
       national_number,
-      lawyer_price,
       specializations,
-      certification: certificat
+      certification: certification
     });
+  
     
     // Generate JWT token
     const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     // Respond with the token
-    res.status(201).json({"msg":"user has been created"  });
+    res.status(201).json({"msg":"user has been created"  },{data:newUser});
   } 
   catch (error) {
     // Handle errors
     console.error('Error registering user:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error});
   }
 };
 

@@ -18,32 +18,9 @@ const userValidationSchema = Joi.object({
         }),
         otherwise: Joi.required(),
     }),
-    lawyer_price: Joi.number().precision(2).allow(null).allow('').when('role', {
-        is: 'customer',
-        then: Joi.valid(null).messages({
-            'any.only': 'Lawyer price must be null for customers',
-        }),
-        otherwise: Joi.required(),
-    }),
-    specializations: Joi.string().valid(
-        'Criminal Law', 'Civil Law', 'Commercial Law', 'Family Law',
-        'International Law', 'Labor Law', 'Intellectual Property Law',
-        'Corporate Law', 'Administrative Law', 'Constitutional Law',
-        'Tax Law', 'Environmental Law'
-    ).allow(null).allow('').when('role', {
-        is: 'customer',
-        then: Joi.valid(null).messages({
-            'any.only': 'Specializations must be null for customers',
-        }),
-        otherwise: Joi.required(),
-    }),
-    certification: Joi.binary().allow(null).allow('').when('role', {
-        is: 'customer',
-        then: Joi.valid(null).messages({
-            'any.only': 'Certification must be null for customers',
-        }),
-        
-    }),
+
+      
+
 });
 
 module.exports = userValidationSchema;

@@ -1,4 +1,4 @@
-const DataTypes = require("sequelize")
+const DataTypes = require("sequelize");
 const sequelize = require("../config/dbConfig");
 
 const User = sequelize.define('User', {
@@ -21,7 +21,8 @@ const User = sequelize.define('User', {
     },
     phone_number: {
         type: DataTypes.STRING(15),
-        allowNull: false
+        allowNull: false,
+        unique: true,
     },
     password: {
         type: DataTypes.STRING(100),
@@ -36,26 +37,13 @@ const User = sequelize.define('User', {
     },
     national_number: {
         type: DataTypes.STRING(20),
-        unique: true,
         allowNull: true,
-        // validate: {
-        //     isNullForLawyer(value) {
-        //         if (this.role === 'lawyer' && value !== null) {
-        //             throw new Error('National number must be null for lawyers');
-        //         }
-        //     }
-        // }
+        unique:false
     },
     lawyer_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
-        validate: {
-            isNullForCustomer(value) {
-                if (this.role === 'customer' && value !== null) {
-                    throw new Error('Lawyer price must be null for customers');
-                }
-            }
-        }
+  
     },
     specializations: {
         type: DataTypes.ENUM(
@@ -73,27 +61,18 @@ const User = sequelize.define('User', {
             'Environmental Law'          // قانون البيئة
         ),
         allowNull: true,
-        validate: {
-            isNullForCustomer(value) {
-                if (this.role === 'customer' && value !== null) {
-                    throw new Error('Specializations must be null for customers');
-                }
-            }
-        }
+        
     },
     certification: {
         type: DataTypes.STRING,
         allowNull: true,
-        // validate: {
-        //     isNullForCustomer(value) {
-        //         if (this.role === 'customer' && value !== null) {
-        //             throw new Error('Certification must be null for customers');
-        //         }
-        //     }
-        // }
+    
     }
 }, {
     tableName: 'users'
 });
+
+// Add hooks to enforce validation
+
 
 module.exports = User;
