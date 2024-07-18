@@ -17,4 +17,5 @@ sequelize.sync({alter:true }) // or { alter: true }
         console.error('Error synchronizing models:', error);
     });
 
+
 module.exports = { Call, Case, News, Notification, Review, User, UserCase, Wallet, Admin };

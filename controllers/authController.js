@@ -31,6 +31,8 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ error: "Passwords don't match" });
     }
 
+ 
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -44,20 +46,18 @@ exports.registerUser = async (req, res) => {
       confirm_password: hashedPassword,
       national_number,
       specializations,
-      certification: certification
+      certification
     });
-  
-    
+
     // Generate JWT token
     const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
-    // Respond with the token
-    res.status(201).json({"msg":"user has been created"  },{data:newUser});
-  } 
-  catch (error) {
+    // Respond with the token and user data
+    res.status(201).json({ msg: "User has been created", data: newUser, token: token });
+  } catch (error) {
     // Handle errors
     console.error('Error registering user:', error);
-    res.status(500).json({ error: error});
+    res.status(500).json({ error: error.message });
   }
 };
 

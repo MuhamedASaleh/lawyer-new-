@@ -38,11 +38,10 @@ const User = sequelize.define('User', {
     national_number: {
         type: DataTypes.STRING(20),
         allowNull: true,
-        unique:false
     },
     lawyer_price: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: true,
+        allowNull: true
   
     },
     specializations: {
