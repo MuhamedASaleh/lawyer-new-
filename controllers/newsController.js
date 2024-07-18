@@ -14,11 +14,27 @@ const createNews = async (req, res) => {
 // Get all news
 const getAllNews = async (req, res) => {
     try {
-        const news = await News.findAll();
-        res.status(200).json(news);
+        const page = parseInt(req.query.page) || 1;  // Current page number, defaulting to 1
+        const limit = parseInt(req.query.limit) || 10;  // Number of records per page, defaulting to 10
+
+        const offset = (page - 1) * limit;  // Calculate offset for skipping records
+
+        const { count, rows } = await News.findAndCountAll({
+            offset,
+            limit
+        });
+
+        const totalPages = Math.ceil(count / limit);  // Calculate total pages
+
+        res.status(200).json({
+            totalItems: count,
+            totalPages,
+            currentPage: page,
+            news: rows
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
-    } 
+    }
 };
 
 // Get news by ID

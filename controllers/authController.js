@@ -7,6 +7,7 @@ const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
 
 exports.registerUser = async (req, res) => {
   try {
+    // Validate user input
 
 
     // Destructure user data from request body
