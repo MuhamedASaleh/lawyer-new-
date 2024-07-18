@@ -21,9 +21,21 @@ async function createQuestionAnswer(req, res) {
 
 // Controller function to get all question-answers
 async function getAllQuestionAnswers(req, res) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
     try {
-        const questionAnswers = await QuestionAnswer.findAll();
-        res.status(200).json(questionAnswers);
+        const { count, rows } = await QuestionAnswer.findAndCountAll({
+            limit: limit,
+            offset: (page - 1) * limit,
+        });
+
+        res.status(200).json({
+            totalItems: count,
+            currentPage: page,
+            limit: limit,
+            questionAnswers: rows
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error fetching question-answers' });
