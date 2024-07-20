@@ -1,5 +1,5 @@
-const DataTypes = require("sequelize");
-const sequelize = require("../config/dbConfig");
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/dbConfig');
 
 const User = sequelize.define('User', {
     userID: {
@@ -22,7 +22,7 @@ const User = sequelize.define('User', {
     phone_number: {
         type: DataTypes.STRING(15),
         allowNull: false,
-        unique:true,
+        unique: true,
     },
     password: {
         type: DataTypes.STRING(100),
@@ -37,41 +37,57 @@ const User = sequelize.define('User', {
     },
     national_number: {
         type: DataTypes.STRING(20),
-       
     },
     lawyer_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true
-  
     },
     specializations: {
         type: DataTypes.ENUM(
-            'Criminal Law',              // القانون الجنائي
-            'Civil Law',                 // القانون المدني
-            'Commercial Law',            // القانون التجاري
-            'Family Law',                // قانون الأسرة
-            'International Law',         // القانون الدولي
-            'Labor Law',                 // قانون العمل
-            'Intellectual Property Law', // قانون الملكية الفكرية
-            'Corporate Law',             // قانون الشركات
-            'Administrative Law',        // القانون الإداري
-            'Constitutional Law',        // القانون الدستوري
-            'Tax Law',                   // قانون الضرائب
-            'Environmental Law'          // قانون البيئة
+            'Criminal Law',
+            'Civil Law',
+            'Commercial Law',
+            'Family Law',
+            'International Law',
+            'Labor Law',
+            'Intellectual Property Law',
+            'Corporate Law',
+            'Administrative Law',
+            'Constitutional Law',
+            'Tax Law',
+            'Environmental Law'
         ),
         allowNull: true,
-        
     },
     certification: {
         type: DataTypes.STRING,
         allowNull: true,
-    
+    },
+    status: {
+        type: DataTypes.ENUM('pending', 'accept', 'reject'),
+        allowNull: true,
+        defaultValue: null,
+        validate: {
+            isStatusValid(value) {
+                if (this.role === 'lawyer' && !value) {
+                    throw new Error('Status is required for lawyers');
+                }
+            }
+        }
     }
 }, {
-    tableName: 'user'
+    tableName: 'user',
+    hooks: {
+        beforeValidate: (user) => {
+            if (user.role === 'customer') {
+                user.status = null; // Clear status if role is customer
+            } else if (user.role === 'lawyer' && !user.status) {
+                user.status = 'pending'; // Set status to pending if role is lawyer
+            }
+        }
+    }
 });
 
-// Add hooks to enforce validation
 
 
 module.exports = User;

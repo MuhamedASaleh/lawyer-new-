@@ -21,6 +21,7 @@ exports.registerUser = async (req, res) => {
       national_number,
       specializations,
       certification,
+      status
     } = req.body;
 
     // Check if the password and confirm_password match
@@ -43,7 +44,8 @@ exports.registerUser = async (req, res) => {
       confirm_password: hashedPassword,
       national_number,
       specializations,
-      certification
+      certification,
+      status
     });
 
     // Generate JWT token
