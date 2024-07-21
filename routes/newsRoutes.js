@@ -8,6 +8,7 @@ const {Auth , AuthorizeRole} = require('../middleware/auth')
 router.post('/news', validate(createNewsSchema), newsController.createNews);
 
 // Get all news
+router.get('/news', newsController.getAllNews);
 router.get('/news' ,Auth ,  AuthorizeRole('lawyer') , newsController.getAllNews);
 
 // Get news by ID
