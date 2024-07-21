@@ -18,17 +18,23 @@ const jwt = require('jsonwebtoken');
 // };
 
 exports.Auth = (req, res, next) => {
-  console.log( req.headers['authorization'])
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-  console.log(token)
+
+  const token = 
+    req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
   if (!token) return res.sendStatus(401); // Unauthorized
+
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+
+   
     if (err) return res.sendStatus(403); // Forbidden
-    req.user = user;
+
     console.log(user)
+    // req.user = user;
+
+
     next();
   });
-
 };
 // middleware/authorizeRole.js
 exports.AuthorizeRole = (role) => {
