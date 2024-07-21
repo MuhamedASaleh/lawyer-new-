@@ -2,14 +2,14 @@
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
 const { Op } = require('sequelize');
+const asyncHandler = require(`express-async-handler`)
 
 exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-
     const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found user by id' });
     }
 
     res.json(user);
@@ -49,67 +49,60 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-exports.getProfile = async (req, res) => {
-  try {
-    console.log('req.userID:', req.userID);
-    const user = await User.findByPk(req.userID); // req.userID is set by the middleware
+exports.getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findByPk(req.user.id); // req.userID is set by the middleware
 
-    if (!user) {
-      console.log('User not found for userID:', req.userID);
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Check user role and respond accordingly
-    if (user.role === 'customer') {
-      // Display customer-specific data
-      res.json({
-        firstName: user.first_name,
-        lastName: user.last_name,
-        phoneNumber: user.phone_number,
-        personalImage: user.personal_image,
-        // Add other customer-specific fields if needed
-      });
-    } else if (user.role === 'lawyer') {
-      // Display lawyer-specific data
-      res.json({
-        firstName: user.first_name,
-        lastName: user.last_name,
-        phoneNumber: user.phone_number,
-        personalImage: user.personal_image,
-        lawyerPrice: user.lawyer_price,
-        specializations: user.specializations,
-        certification: user.certification,
-        // Add other lawyer-specific fields if needed
-      });
-    } else {
-      console.log('Invalid role for userID:', req.userID);
-      res.status(400).json({ error: 'Invalid role' });
-    }
-  } catch (error) {
-    console.log('Server error', error);
-    res.status(500).json({ error: 'Server error' });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
   }
-};
 
+  // Check user role and respond accordingly
+  if (user.role === 'customer') {
+    // Display customer-specific data
+    res.json({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phoneNumber: user.phone_number,
+      personalImage: user.personal_image,
+      // Add other customer-specific fields if needed
+    });
+  } else if (user.role === 'lawyer') {
+    // Display lawyer-specific data
+    res.json({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phoneNumber: user.phone_number,
+      personalImage: user.personal_image,
+      lawyerPrice: user.lawyer_price,
+      specializations: user.specializations,
+      certification: user.certification,
+      // Add other lawyer-specific fields if needed
+    });
+  } else {
+    res.status(400).json({ error: 'Invalid role' });
+  }
 
+}
+)
 // Update User Profile
-exports.updateProfile = async (req, res) => {
-  try {
-    const { first_name, last_name, phone_number, personal_image } = req.body;
-    const user = await User.findByPk(req.userID);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    user.first_name = first_name;
-    user.last_name = last_name;
-    user.phone_number = phone_number;
-    user.personal_image = personal_image;
-    await user.save();
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-   }
-};
+exports.updateProfile = asyncHandler(async (req, res) => {
+
+  const { first_name, last_name, phone_number, personal_image } = req.body;
+  const user = await User.findByPk(req.user.id,{
+    attributes: { exclude: ['password',`confirm_password` , `createdAt` , `updatedAt`] },
+  });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found ,  update profile controller' });
+  }
+  user.first_name = first_name || user.first_name;
+  user.last_name = last_name || user.last_name;
+  user.phone_number = phone_number || user.phone_number;
+  user.personal_image = personal_image || user.personal_image;
+  await user.save();
+  
+  res.status(201).json({ message: "updated", data: user });
+
+})
 
 //GetAllUsersByStatus -lawyers (if condation )
 exports.getUsersByStatus = async (req, res) => {
@@ -336,7 +329,7 @@ exports.updateUserStatus = async (req, res) => {
     // Find and update the user
     const user = await User.findByPk(id);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found update status' });
     }
 
     // Check if the user is a lawyer

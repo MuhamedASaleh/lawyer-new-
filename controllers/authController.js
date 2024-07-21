@@ -49,7 +49,7 @@ exports.registerUser = async (req, res) => {
     });
 
     // Generate JWT token
-    const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+    const token = jwt.sign({ id: newUser.userID , role:newUser.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
 
     // Respond with the token and user data
     res.status(201).json({ msg: "User has been created", data: newUser, token: token });
@@ -68,7 +68,7 @@ exports.loginUser = async (req, res) => {
     // Find user by phone_number
     const user = await User.findOne({ where: { phone_number } });
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found  login' });
     }
 
     // Compare passwords
@@ -78,7 +78,7 @@ exports.loginUser = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userID: user.userID }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+    const token = jwt.sign({ id: user.userID , role:user.role}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
 
     res.json({ token });
   } catch (error) {
