@@ -49,7 +49,7 @@ exports.registerUser = async (req, res) => {
     });
 
     // Generate JWT token
-    const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION * 60 * 60 * 24 });
+    const token = jwt.sign({ userID: newUser.userID }, JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION * 60 * 60 * 24 });
 
     // Respond with the token and user data
     res.status(201).json({ msg: "User has been created", data: newUser, token: token });
@@ -78,7 +78,7 @@ exports.loginUser = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userID: user.userID }, JWT_SECRET, { expiresIn: JWT_EXPIRATION*60*60*24 });
+    const token = jwt.sign({ userID: user.userID }, JWT_SECRET, { expiresIn: +process.env.JWT_EXPIRATION * 60 * 60 * 24 });
 
     res.json({ token });
   } catch (error) {

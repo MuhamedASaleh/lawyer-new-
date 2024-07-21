@@ -14,16 +14,14 @@ const jwt = require('jsonwebtoken');
 
 //     req.userID = decoded.userID;
 //     next();
-//   });
+//   }); 
 // };
 
 exports.Auth = (req, res, next) => {
+  console.log( req.headers['authorization'])
   const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-  console.log(req.headers.authorization)
-  console.log('=================================================')
-  console.log(req.headers['authorization'].split(' ')[1])
+  console.log(token)
   if (!token) return res.sendStatus(401); // Unauthorized
-
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403); // Forbidden
     req.user = user;
@@ -32,7 +30,15 @@ exports.Auth = (req, res, next) => {
   });
 
 };
-
+// middleware/authorizeRole.js
+exports.AuthorizeRole = (role) => {
+  return (req, res, next) => {
+    if (req.user.role !== role) {
+      return res.sendStatus(403); // Forbidden
+    }
+    next();
+  };
+};
 
 // const authenticateJWT = (req, res, next) => {
 //   const authHeader = req.headers.authorization;

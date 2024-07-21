@@ -1,131 +1,131 @@
-  // controllers/userController.js
-  const User  = require('../models/userModel');
-  const userValidator = require('../Validations/userValidator');
-  const { Op } = require('sequelize');
+// controllers/userController.js
+const User = require('../models/userModel');
+const userValidator = require('../Validations/userValidator');
+const { Op } = require('sequelize');
 
-  exports.getUserById = async (req, res) => {
-    try {
-      const { id } = req.params;
+exports.getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-      const user = await User.findByPk(id);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-  };
 
-  exports.updateUser = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { error } = userValidator.validate(req.body);
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-      }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-      const updatedUser = await User.update(req.body, {
-        where: { userID: id },
-        returning: true,
+exports.updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = userValidator.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const updatedUser = await User.update(req.body, {
+      where: { userID: id },
+      returning: true,
+    });
+
+    res.json(updatedUser[1][0]); // Return the updated user
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await User.destroy({ where: { userID: id } });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    console.log('req.userID:', req.userID);
+    const user = await User.findByPk(req.userID); // req.userID is set by the middleware
+
+    if (!user) {
+      console.log('User not found for userID:', req.userID);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check user role and respond accordingly
+    if (user.role === 'customer') {
+      // Display customer-specific data
+      res.json({
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phoneNumber: user.phone_number,
+        personalImage: user.personal_image,
+        // Add other customer-specific fields if needed
       });
-
-      res.json(updatedUser[1][0]); // Return the updated user
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } else if (user.role === 'lawyer') {
+      // Display lawyer-specific data
+      res.json({
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phoneNumber: user.phone_number,
+        personalImage: user.personal_image,
+        lawyerPrice: user.lawyer_price,
+        specializations: user.specializations,
+        certification: user.certification,
+        // Add other lawyer-specific fields if needed
+      });
+    } else {
+      console.log('Invalid role for userID:', req.userID);
+      res.status(400).json({ error: 'Invalid role' });
     }
-  };
-
-  exports.deleteUser = async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      await User.destroy({ where: { userID: id } });
-
-      res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-
-  exports.getProfile = async (req, res) => {
-    try {
-        console.log('req.userID:', req.userID);
-        const user = await User.findByPk(req.userID); // req.userID is set by the middleware
-        
-        if (!user) {
-            console.log('User not found for userID:', req.userID);
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        // Check user role and respond accordingly
-        if (user.role === 'customer') {
-            // Display customer-specific data
-            res.json({
-                firstName: user.first_name,
-                lastName: user.last_name,
-                phoneNumber: user.phone_number,
-                personalImage: user.personal_image,
-                // Add other customer-specific fields if needed
-            });
-        } else if (user.role === 'lawyer') {
-            // Display lawyer-specific data
-            res.json({
-                firstName: user.first_name,
-                lastName: user.last_name,
-                phoneNumber: user.phone_number,
-                personalImage: user.personal_image,
-                lawyerPrice: user.lawyer_price,
-                specializations: user.specializations,
-                certification: user.certification,
-                // Add other lawyer-specific fields if needed
-            });
-        } else {
-            console.log('Invalid role for userID:', req.userID);
-            res.status(400).json({ error: 'Invalid role' });
-        }
-    } catch (error) {
-        console.log('Server error', error);
-        res.status(500).json({ error: 'Server error' });
-    }
+  } catch (error) {
+    console.log('Server error', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 };
 
 
-  // Update User Profile
-  exports.updateProfile = async (req, res) => {
-    try {
-        const { first_name, last_name, phone_number, personal_image } = req.body;
-        const user = await User.findByPk(req.userID);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.first_name = first_name;
-        user.last_name = last_name;
-        user.phone_number = phone_number;
-        user.personal_image = personal_image;
-        await user.save();
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-      }
-  };
-
-  //GetAllUsersByStatus -lawyers (if condation )
-  exports.getUsersByStatus = async (req, res) => {
-    try {
-        const { status } = req.params;
-      
-        if (!['pending', 'accept', 'reject'].includes(status)) {
-            return res.status(400).json({ error: 'Invalid status' });
-        }
-        const users = await User.findAll({
-            where: { status }
-        });
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
+// Update User Profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const { first_name, last_name, phone_number, personal_image } = req.body;
+    const user = await User.findByPk(req.userID);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
+    user.first_name = first_name;
+    user.last_name = last_name;
+    user.phone_number = phone_number;
+    user.personal_image = personal_image;
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+   }
+};
+
+//GetAllUsersByStatus -lawyers (if condation )
+exports.getUsersByStatus = async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    if (!['pending', 'accept', 'reject'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const users = await User.findAll({
+      where: { status }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
 };
 
 
@@ -135,9 +135,9 @@ exports.getUsersBySpecializations = async (req, res) => {
   try {
     const { specializations, page = 1, limit = 10 } = req.query;
 
-    // if (!specializations) {
-    //   return res.status(400).json({ error: 'Specializations query parameter is required' });
-    // }
+    if (!specializations) {
+      return res.status(400).json({ error: 'Specializations query parameter is required' });
+    }
 
     // Split the specializations by comma and trim any extra spaces
     const specializationArray = specializations.split(',').map(s => s.trim());
