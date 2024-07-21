@@ -135,9 +135,9 @@ exports.getUsersBySpecializations = async (req, res) => {
   try {
     const { specializations, page = 1, limit = 10 } = req.query;
 
-    if (!specializations) {
-      return res.status(400).json({ error: 'Specializations query parameter is required' });
-    }
+    // if (!specializations) {
+    //   return res.status(400).json({ error: 'Specializations query parameter is required' });
+    // }
 
     // Split the specializations by comma and trim any extra spaces
     const specializationArray = specializations.split(',').map(s => s.trim());
