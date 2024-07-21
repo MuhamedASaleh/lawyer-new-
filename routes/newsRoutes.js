@@ -8,7 +8,7 @@ const {Auth} = require('../middleware/auth')
 router.post('/news', validate(createNewsSchema), newsController.createNews);
 
 // Get all news
-router.get('/news',Auth , newsController.getAllNews);
+router.get('/news' , newsController.getAllNews);
 
 // Get news by ID
 router.get('/news/:id', newsController.getNewsById);
