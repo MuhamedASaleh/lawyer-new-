@@ -9,13 +9,13 @@ const UserCase = require("../models/userCaseModel");
 const User = require('../models/userModel');
 const Wallet = require("../models/walletModel");
 
-sequelize.sync({alter:true }) // or { alter: true }
-    .then(() => {
-        console.log('Models synchronized successfully.');
-    })
-    .catch(error => {
-        console.error('Error synchronizing models:', error);
-    });
+// sequelize.sync({alter:true }) // or { alter: true }
+//     .then(() => {
+//         console.log('Models synchronized successfully.');
+//     })
+//     .catch(error => {
+//         console.error('Error synchronizing models:', error);
+//     });
 
 
 module.exports = { Call, Case, News, Notification, Review, UserCase, Wallet, Admin ,User };
