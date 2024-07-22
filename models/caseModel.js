@@ -42,4 +42,4 @@ const Case = sequelize.define(
     timestamps: true
   }
 );
-module.exports =Case;
+module.exports =Case; 
