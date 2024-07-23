@@ -20,7 +20,7 @@ const News = sequelize.define('News', {
     },
    
 }, {
-    tableName: 'news',
+tableName: 'news',
     timeStamp :true
     // updatedAt: 'updatedAt', // Rename default updatedAt field to match the column name
     // createdAt: 'createdAt' // Rename default createdAt field to match the column name

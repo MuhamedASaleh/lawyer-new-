@@ -83,7 +83,7 @@ const deleteAdmin = async (req, res) => {
 
 // Register a new admin
 const registerAdmin = async (req, res) => {
-    const { phoneNumber, password, national_number } = req.body;
+    const { phoneNumber, password, national_number  } = req.body;
 
     try {
         // Check if admin already exists
@@ -123,7 +123,7 @@ const loginAdmin = async (req, res) => {
         }
 
         // Generate a JWT token
-        const token = jwt.sign({ adminID: admin.adminID }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION});
+        const token = jwt.sign({ id: admin.adminID ,role:admin.role}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION});
 
         res.status(200).json({ message: 'Login successful', token });
     } catch (err) {

@@ -7,6 +7,7 @@ var bodyParser = require("body-parser");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const newsRoutes = require('./routes/newsRoutes');
+const caseRoutes = require('./routes/caseRoutes')
 
 const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
 // const adminRoutes =require('./routes/admin/adminRoutes')
@@ -63,6 +64,8 @@ app.use('/api/questionAnswer', questionAnswerRoutes);
 // Use the admin routes
 app.use('/api', adminRoutes);
 app.use('/api', reviewRoutes);
+// Use the case routes
+app.use('/api/cases', caseRoutes);
 
 
 const errorMiddleWare = require('./middleware/errorMiddleWare')
