@@ -13,7 +13,7 @@ const Case = sequelize.define('case', {
             'inspection',
             'court',
             'pleadings',
-            'completed',
+            'completed', 
             'won',
             'lost',
             'pending',

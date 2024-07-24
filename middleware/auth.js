@@ -35,14 +35,15 @@ exports.Auth = (req, res, next) => {
   });
 };
 // middleware/authorizeRole.js
-exports.AuthorizeRole = role => {
+exports.AuthorizeRole = (...roles) => {
   return (req, res, next) => {
-    if (req.user.role !== role) {
+    if (!roles.includes(req.user.role)) {
       return res.sendStatus(403); // Forbidden
     }
     next();
   };
 };
+
 
 // const authenticateJWT = (req, res, next) => {
 //   const authHeader = req.headers.authorization;
