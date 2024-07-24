@@ -7,9 +7,9 @@ const { JWT_SECRET, JWT_EXPIRATION } = require('../../config/jwtConfig');
 // Create a new admin
 const createAdmin = async (req, res) => {
     try {
-        const { phoneNumber, password ,national_number} = req.body;
+        const { phoneNumber, password, national_number } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const admin = await Admin.create({ phoneNumber, password: hashedPassword ,national_number});
+        const admin = await Admin.create({ phoneNumber, password: hashedPassword, national_number });
         res.status(201).json(admin);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -44,7 +44,7 @@ const getAdminById = async (req, res) => {
 const updateAdmin = async (req, res) => {
     try {
         const { id } = req.params;
-        const { phoneNumber, password ,national_number } = req.body;
+        const { phoneNumber, password, national_number } = req.body;
 
         const admin = await Admin.findByPk(id);
         if (!admin) {
@@ -123,7 +123,7 @@ const loginAdmin = async (req, res) => {
         }
 
         // Generate a JWT token
-        const token = jwt.sign({ adminID: admin.adminID }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION});
+        const token = jwt.sign({ adminID: admin.adminID, role: admin.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
 
         res.status(200).json({ message: 'Login successful', token });
     } catch (err) {

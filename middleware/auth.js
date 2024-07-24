@@ -28,7 +28,6 @@ exports.Auth = (req, res, next) => {
 
 
     if (err) return res.sendStatus(403); // Forbidden
-
     req.user = user;
     console.log(user)
     next();
