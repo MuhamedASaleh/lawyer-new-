@@ -11,7 +11,7 @@ router.get('/status/:status', userController.getUsersByStatus);
 router.get('/customers', userController.getAllCustomers);
 router.get('/lawyers/accepted', userController.getLawyersByStatusAccept);
 router.get('/lawyers/pending', userController.getLawyersByStatusPending);
-router.patch('/:id/status',Auth ,  AuthorizeRole('admin') ,userController.updateUserStatus);
+router.patch('/:id/status' , Auth ,  AuthorizeRole('admin') ,userController.updateUserStatus);
 
 //Existing 
 router.get('/:id', Auth, userController.getUserById);
