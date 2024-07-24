@@ -177,11 +177,11 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
   });
 });
 
-
-exports.updateCaseStatus = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { status } = req.body;
+ 
+  exports.updateCaseStatus = async (req, res) => {
+    try {
+        const { caseId } = req.params;
+        const { status } = req.body;
 
     const caseToUpdate = await Case.findByPk(caseId);
     if (!caseToUpdate) {
