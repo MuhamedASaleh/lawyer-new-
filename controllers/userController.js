@@ -346,3 +346,46 @@ exports.updateUserStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+// get all lawyers by role is lawyer with pagintion
+exports.getAllLawyers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Validate page and limit
+    if (isNaN(pageNumber) || pageNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid page parameter' });
+    }
+
+    if (isNaN(limitNumber) || limitNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid limit parameter' });
+    }
+
+    // Calculate offset
+    const offset = (pageNumber - 1) * limitNumber;
+
+    // Find all lawyers with pagination
+    const { count, rows } = await User.findAndCountAll({
+      where: { role: 'lawyer' },
+      limit: limitNumber,
+      offset
+    });
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No lawyers found' });
+    }
+
+    res.json({
+      total: count,
+      totalPages: Math.ceil(count / limitNumber),
+      currentPage: pageNumber,
+      limit: limitNumber,
+      lawyers: rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
