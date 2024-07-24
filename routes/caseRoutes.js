@@ -10,13 +10,15 @@ router.post('/create', Auth, AuthorizeRole('lawyer'),createCase);
 router.get('/:caseId/details', getCaseDetails);
 
 // Route to update case status to accepted(for customers only)
-router.put('/:caseId/updateStatus', caseController.updateCaseStatus);
+router.put('/:caseId/updateStatus', updateCaseStatus);
 
 // Route to decline and delete a case
 // router.delete('/:caseId/declineAndDelete', Auth, caseController.declineAndDeleteCase);;
 
 // Route to update customer files (for customers only)
-router.put('/:caseId/updateCustomerFiles',caseController.updateCustomerFiles)
+router.put('/:caseId/updateCustomerFiles',updateCustomerFiles)
 
+router.get('/case' , Auth, AuthorizeRole('customer', 'lawyer')  , filterCurrentCase)
+router.get('/adminCase' , Auth, AuthorizeRole('admin')  , filterCurrentCaseAdmin)
 
 module.exports = router;
