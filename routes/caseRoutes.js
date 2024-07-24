@@ -1,6 +1,6 @@
 const router = require('express').Router()
 
-const { filterCurrentCase , filterCurrentCaseAdmin ,createCase,getCaseDetails,updateCaseStatus,updateCustomerFiles} = require('../controllers/caseController')
+const { filterCurrentCase, filterCurrentCaseAdmin ,createCase,getCaseDetails,updateCaseStatus,updateCustomerFiles} = require('../controllers/caseController')
 
 const { Auth, AuthorizeRole } = require('../middleware/auth')
 // Route to create a new case

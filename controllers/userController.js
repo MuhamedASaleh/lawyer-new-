@@ -128,13 +128,6 @@ exports.getUsersBySpecializations = async (req, res) => {
   try {
     const { specializations, page = 1, limit = 10 } = req.query;
 
-    if (!specializations) {
-      return res.status(400).json({ error: 'Specializations query parameter is required' });
-    }
-
-    // Split the specializations by comma and trim any extra spaces
-    const specializationArray = specializations.split(',').map(s => s.trim());
-
     // Convert page and limit to integers
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -151,19 +144,27 @@ exports.getUsersBySpecializations = async (req, res) => {
     // Calculate offset
     const offset = (pageNumber - 1) * limitNumber;
 
-    // Find users where specializations match any of the provided specializations
-    const { count, rows } = await User.findAndCountAll({
-      where: {
+    // Build the where condition based on specializations
+    let whereCondition = {};
+    if (specializations) {
+      // Split the specializations by comma and trim any extra spaces
+      const specializationArray = specializations.split(',').map(s => s.trim());
+      whereCondition = {
         specializations: {
           [Op.or]: specializationArray.map(s => ({ [Op.eq]: s }))
         }
-      },
+      };
+    }
+
+    // Find users based on the where condition
+    const { count, rows } = await User.findAndCountAll({
+      where: whereCondition,
       limit: limitNumber,
       offset
     });
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'No users found with the specified specializations' });
+      return res.status(404).json({ error: 'No users found' });
     }
 
     res.json({
@@ -177,6 +178,7 @@ exports.getUsersBySpecializations = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 // Function to get paginated users with the role of 'customer'
 exports.getAllCustomers = async (req, res) => {
   try {

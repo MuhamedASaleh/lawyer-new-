@@ -138,7 +138,64 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
   res.status(200).json({ data: cases });
 });
 
- 
+exports.filterCompletedCases = asyncHandler(async (req, res) => {
+    console.log(req.user.id);
+  
+    const { status } = req.body;
+    let whereCondition = {};
+  
+    if (status) {
+      // If status is provided, filter by that status (win or lose)
+      if (status === 'win' || status === 'lose') {
+        whereCondition.status = status;
+      } else {
+        return res.status(400).json({ state: 'failed', message: 'Invalid status provided. Status must be either "win" or "lose".' });
+      }
+    } else {
+      // If status is not provided, return all cases with status win or lose
+      whereCondition.status = {
+        [Op.in]: ['win', 'lose']
+      };
+    }
+  
+    const cases = await Case.findAll({ where: whereCondition });
+  
+    if (!cases || cases.length === 0) {
+      return res.status(404).json({ state: 'failed', message: 'No completed cases to show for the current user' });
+    }
+  
+    res.status(200).json({ data: cases });
+  });
+
+  
+exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    let whereCondition = {};
+  
+    if (status) {
+      // If status is provided, filter by that status (win or lose)
+      if (status === 'win' || status === 'lose') {
+        whereCondition.status = status;
+      } else {
+        return res.status(400).json({ state: 'failed', message: 'Invalid status provided. Status must be either "win" or "lose".' });
+      }
+    } else {
+      // If status is not provided, return all cases with status win or lose
+      whereCondition.status = {
+        [Op.in]: ['win', 'lose']
+      };
+    }
+  
+    const cases = await Case.findAll({ where: whereCondition });
+  
+    if (!cases || cases.length === 0) {
+      return res.status(404).json({ state: 'failed', message: 'No completed cases to show' });
+    }
+  
+    res.status(200).json({ data: cases });
+  });
+  
+
   exports.updateCaseStatus = async (req, res) => {
     try {
         const { caseId } = req.params;
