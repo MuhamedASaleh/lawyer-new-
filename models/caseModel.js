@@ -17,7 +17,8 @@ const Case = sequelize.define('case', {
             'won',
             'lost',
             'pending',
-            'accepted'
+            'accepted',
+            'decline'
         ],
         allowNull: false,
         defaultValue: 'pending'

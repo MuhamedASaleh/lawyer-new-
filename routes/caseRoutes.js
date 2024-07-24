@@ -8,10 +8,14 @@ router.post('/create', Auth, AuthorizeRole('lawyer'), caseController.createCase)
 // Route to get case details
 router.get('/:caseId/details', caseController.getCaseDetails);
 
-// Route to update case status (for customers only)
+// Route to update case status to accepted(for customers only)
 router.put('/:caseId/updateStatus', caseController.updateCaseStatus);
 
+// Route to decline and delete a case
+// router.delete('/:caseId/declineAndDelete', Auth, caseController.declineAndDeleteCase);;
+
 // Route to update customer files (for customers only)
-router.put('/:caseId/updateCustomerFiles',caseController.updateCustomerFiles);
+router.put('/:caseId/updateCustomerFiles',caseController.updateCustomerFiles)
+
 
 module.exports = router;
