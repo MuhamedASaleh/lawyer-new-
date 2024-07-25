@@ -7,7 +7,9 @@ const {
   createCase, 
   getCaseDetails, 
   updateCaseStatus, 
-  updateCustomerFiles 
+  updateCustomerFiles, 
+  filterPendingCases,
+  filterPendingCasesAdmin
 } = require('../controllers/caseController');
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
@@ -34,5 +36,12 @@ router.get('/filterCompletedCases', Auth,AuthorizeRole('lawyer','customer') ,fil
 
 // Route to filter completed cases (win or lose) for admin
 router.get('/filterCompletedCasesAdmin', Auth, AuthorizeRole('admin'), filterCompletedCasesAdmin);
+
+// Route to filter pending cases for the current user
+router.get('/filterPendingCases', Auth, AuthorizeRole('lawyer', 'customer'), filterPendingCases);
+
+// Route to filter pending cases for admin
+router.get('/filterPendingCasesAdmin', Auth, AuthorizeRole('admin'), filterPendingCasesAdmin);
+
 
 module.exports = router;
