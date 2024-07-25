@@ -236,10 +236,8 @@ exports.updateCustomerFiles = async (req, res) => {
 };
 
 
-
-
 exports.filterCompletedCases = asyncHandler(async (req, res) => {
-  const { status } = req.query;
+  const { status, page = 1, limit = 10 } = req.query;
 
   let whereCondition = {};
 
@@ -253,17 +251,35 @@ exports.filterCompletedCases = asyncHandler(async (req, res) => {
       };
   }
 
-  const cases = await Case.findAll({ where: whereCondition });
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
 
-  if (!cases || cases.length === 0) {
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
+      where: whereCondition,
+      limit: limitNumber,
+      offset
+  });
+
+  if (!rows || rows.length === 0) {
       return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
   }
 
-  res.status(200).json({ data: cases });
+  res.status(200).json({
+      total: count,
+      totalPages: Math.ceil(count / limitNumber),
+      currentPage: pageNumber,
+      limit: limitNumber,
+      data: rows
+  });
 });
 
 exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
-  const { status } = req.query;
+  const { status, page = 1, limit = 10 } = req.query;
 
   let whereCondition = {};
 
@@ -277,11 +293,29 @@ exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
       };
   }
 
-  const cases = await Case.findAll({ where: whereCondition });
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
 
-  if (!cases || cases.length === 0) {
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
+      where: whereCondition,
+      limit: limitNumber,
+      offset
+  });
+
+  if (!rows || rows.length === 0) {
       return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
   }
 
-  res.status(200).json({ data: cases });
+  res.status(200).json({
+      total: count,
+      totalPages: Math.ceil(count / limitNumber),
+      currentPage: pageNumber,
+      limit: limitNumber,
+      data: rows
+  });
 });
