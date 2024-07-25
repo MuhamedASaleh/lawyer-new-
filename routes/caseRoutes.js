@@ -9,7 +9,8 @@ const {
   updateCaseStatus, 
   updateCustomerFiles, 
   filterPendingCases,
-  filterPendingCasesAdmin
+  filterPendingCasesAdmin,
+  getCaseCount
 } = require('../controllers/caseController');
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
@@ -42,6 +43,11 @@ router.get('/filterPendingCases', Auth, AuthorizeRole('lawyer', 'customer'), fil
 
 // Route to filter pending cases for admin
 router.get('/filterPendingCasesAdmin', Auth, AuthorizeRole('admin'), filterPendingCasesAdmin);
+
+// Route to get the count of cases
+
+router.get('/caseCount', Auth, getCaseCount);
+
 
 
 module.exports = router;
