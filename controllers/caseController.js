@@ -234,3 +234,54 @@ exports.updateCustomerFiles = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+exports.filterCompletedCases = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+
+  let whereCondition = {};
+
+  if (status && ['won', 'lost'].includes(status)) {
+      // If status is provided and valid, filter by that status
+      whereCondition.status = status;
+  } else {
+      // If status is not provided or invalid, return both "won" and "lost" cases
+      whereCondition.status = {
+          [Op.in]: ['won', 'lost']
+      };
+  }
+
+  const cases = await Case.findAll({ where: whereCondition });
+
+  if (!cases || cases.length === 0) {
+      return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
+  }
+
+  res.status(200).json({ data: cases });
+});
+
+exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+
+  let whereCondition = {};
+
+  if (status && ['won', 'lost'].includes(status)) {
+      // If status is provided and valid, filter by that status
+      whereCondition.status = status;
+  } else {
+      // If status is not provided or invalid, return both "won" and "lost" cases
+      whereCondition.status = {
+          [Op.in]: ['won', 'lost']
+      };
+  }
+
+  const cases = await Case.findAll({ where: whereCondition });
+
+  if (!cases || cases.length === 0) {
+      return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
+  }
+
+  res.status(200).json({ data: cases });
+});
