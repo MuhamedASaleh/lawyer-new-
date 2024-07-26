@@ -27,7 +27,7 @@ app.get('/', async (req, res) => {
 });
 
 //db connection
-sequelize.sync({ force: false })
+sequelize.sync({ force: true })
   .then(() => {
     console.log('Database synced');
     app.listen(port, () => {

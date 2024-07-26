@@ -11,9 +11,10 @@ const {
     validateCreateQuestionAnswer,
     validateUpdateQuestionAnswer,
 } = require('../Validations/questionAnswerValidator');
+const { Auth } = require('../middleware/auth')
 // const validateRequest = require('../middleware/validateRequest');
 // Create a new question-answer
-router.post('/',  createQuestionAnswer);
+router.post('/',Auth, createQuestionAnswer);
 
 // Get all question-answers
 router.get('/', getAllQuestionAnswers);

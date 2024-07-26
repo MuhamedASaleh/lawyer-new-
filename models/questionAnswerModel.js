@@ -15,6 +15,10 @@ const QuestionAnswer = sequelize.define('QuestionAnswer', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    userID: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    }
 }, {
     tableName: 'question_answers',
 });

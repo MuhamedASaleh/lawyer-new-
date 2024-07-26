@@ -4,10 +4,14 @@ const  QuestionAnswer  = require('../models/questionAnswerModel');
 async function createQuestionAnswer(req, res) {
     const { question, answer } = req.body;
     try {
+        const userId = req.user.id
+        console.log(userId)
         // Create a new QuestionAnswer record using Sequelize's create method
         const newQuestionAnswer = await QuestionAnswer.create({
+            
             question,
-            answer
+            answer,
+            userID :userId
         });
 
         // Respond with the newly created QuestionAnswer object

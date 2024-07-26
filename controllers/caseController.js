@@ -6,13 +6,16 @@ const asyncHandler = require('express-async-handler');
 
 exports.createCase = async (req, res) => {
   try {
+    console.log(req.user.id)
     const { judge_name, lawyer_fees, court_fees } = req.body;
 
     const newCase = await Case.create({
       judge_name,
       lawyer_fees,
       court_fees,
-      status: 'pending'
+      status: 'pending',
+      lawyerId: req.user.id,
+      customerId: 4, // here we should do somthing to modify that the custmor send file to get his id 
     });
 
     const caseWithDetails = await Case.findByPk(newCase.caseID);
@@ -87,7 +90,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
   const page = req.query.page || 1;
   const limit = req.query.limit || 10;
   console.log(req.user.id);
-  const { status } = req.body;
+  const { status } = req.query;
 
   let whereCondition = {};
   const offset = (page - 1) * limit;
@@ -134,7 +137,7 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
 
   const page = req.query.page || 1;
   const limit = req.query.limit || 10;
-  const { status } = req.body;
+  const { status } = req.query;
 
   let whereCondition = {};
   // Calculate the offset for pagination
@@ -177,11 +180,11 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
   });
 });
 
- 
-  exports.updateCaseStatus = async (req, res) => {
-    try {
-        const { caseId } = req.params;
-        const { status } = req.body;
+
+exports.updateCaseStatus = async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const { status } = req.body;
 
     const caseToUpdate = await Case.findByPk(caseId);
     if (!caseToUpdate) {
@@ -242,13 +245,13 @@ exports.filterCompletedCases = asyncHandler(async (req, res) => {
   let whereCondition = {};
 
   if (status && ['won', 'lost'].includes(status)) {
-      // If status is provided and valid, filter by that status
-      whereCondition.status = status;
+    // If status is provided and valid, filter by that status
+    whereCondition.status = status;
   } else {
-      // If status is not provided or invalid, return both "won" and "lost" cases
-      whereCondition.status = {
-          [Op.in]: ['won', 'lost']
-      };
+    // If status is not provided or invalid, return both "won" and "lost" cases
+    whereCondition.status = {
+      [Op.in]: ['won', 'lost']
+    };
   }
 
   // Convert page and limit to integers
@@ -260,21 +263,21 @@ exports.filterCompletedCases = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-      where: whereCondition,
-      limit: limitNumber,
-      offset
+    where: whereCondition,
+    limit: limitNumber,
+    offset
   });
 
   if (!rows || rows.length === 0) {
-      return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
+    return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
   }
 
   res.status(200).json({
-      total: count,
-      totalPages: Math.ceil(count / limitNumber),
-      currentPage: pageNumber,
-      limit: limitNumber,
-      data: rows
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
   });
 });
 
@@ -284,13 +287,13 @@ exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
   let whereCondition = {};
 
   if (status && ['won', 'lost'].includes(status)) {
-      // If status is provided and valid, filter by that status
-      whereCondition.status = status;
+    // If status is provided and valid, filter by that status
+    whereCondition.status = status;
   } else {
-      // If status is not provided or invalid, return both "won" and "lost" cases
-      whereCondition.status = {
-          [Op.in]: ['won', 'lost']
-      };
+    // If status is not provided or invalid, return both "won" and "lost" cases
+    whereCondition.status = {
+      [Op.in]: ['won', 'lost']
+    };
   }
 
   // Convert page and limit to integers
@@ -302,20 +305,20 @@ exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-      where: whereCondition,
-      limit: limitNumber,
-      offset
+    where: whereCondition,
+    limit: limitNumber,
+    offset
   });
 
   if (!rows || rows.length === 0) {
-      return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
+    return res.status(404).json({ state: 'failed', message: 'No completed cases found' });
   }
 
   res.status(200).json({
-      total: count,
-      totalPages: Math.ceil(count / limitNumber),
-      currentPage: pageNumber,
-      limit: limitNumber,
-      data: rows
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
   });
 });

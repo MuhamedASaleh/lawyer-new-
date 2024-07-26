@@ -13,7 +13,7 @@ const Case = sequelize.define('case', {
             'inspection',
             'court',
             'pleadings',
-            'completed', 
+            'completed',
             'won',
             'lost',
             'pending',
@@ -55,9 +55,16 @@ const Case = sequelize.define('case', {
         set(value) {
             throw new Error('Do not try to set the `total` value!');
         }
+    }, lawyerId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    customerId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     }
 }, {
-  tableName: 'cases',
+    tableName: 'cases',
     timestamps: true,
     toJSON: {
         getters: true,
