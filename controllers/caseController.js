@@ -238,7 +238,7 @@ exports.updateCustomerFiles = async (req, res) => {
   }
 };
 
-
+//filtering completed cases with won or lost or both of them 
 exports.filterCompletedCases = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 10 } = req.query;
 
@@ -321,4 +321,92 @@ exports.filterCompletedCasesAdmin = asyncHandler(async (req, res) => {
     limit: limitNumber,
     data: rows
   });
+});
+
+
+//filtering for pending case in lawyer and customer with (token)
+
+exports.filterPendingCases = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const whereCondition = {
+    status: 'pending'
+  };
+
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
+    where: whereCondition,
+    limit: limitNumber,
+    offset
+  });
+
+  if (!rows || rows.length === 0) {
+    return res.status(404).json({ state: 'failed', message: 'No pending cases found' });
+  }
+
+  res.status(200).json({
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
+  });
+});
+//filtering for pending case in admin with (token)
+exports.filterPendingCasesAdmin = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const whereCondition = {
+    status: 'pending'
+  };
+
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
+    where: whereCondition,
+    limit: limitNumber,
+    offset
+  });
+
+  if (!rows || rows.length === 0) {
+    return res.status(404).json({ state: 'failed', message: 'No pending cases found' });
+  }
+
+  res.status(200).json({
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
+  });
+});
+
+//get length or count of cases by filter status 
+exports.getCaseCount = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+
+  let whereCondition = {};
+
+  if (status && ['inspection', 'court', 'pleadings', 'completed', 'won', 'lost', 'pending', 'accepted', 'decline'].includes(status)) {
+    // If status is provided and valid, filter by that status
+    whereCondition.status = status;
+  }
+
+  // Count the cases with the specified condition
+  const count = await Case.count({ where: whereCondition });
+
+  res.status(200).json({ count });
 });

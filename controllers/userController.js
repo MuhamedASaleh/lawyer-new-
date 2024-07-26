@@ -391,3 +391,11 @@ exports.getAllLawyers = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// get all lawyers count 
+
+exports.getLawyerCount = asyncHandler(async (req, res) => {
+    const lawyerCount = await User.count({ where: { role: 'lawyer' } });
+
+    res.status(200).json({ count: lawyerCount });
+});
