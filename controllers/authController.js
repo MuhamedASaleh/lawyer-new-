@@ -79,6 +79,7 @@ exports.updateUserStatus = async (req, res) => {
     const { userId } = req.params;
     const { status } = req.body;
 
+    // Ensure status is either 'accept' or 'reject'
     if (!['accept', 'reject'].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
@@ -88,6 +89,7 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Only update the status of lawyers
     if (user.role !== 'lawyer') {
       return res.status(400).json({ error: "Only lawyers' status can be updated" });
     }
