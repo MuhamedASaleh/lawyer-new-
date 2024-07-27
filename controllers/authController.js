@@ -7,10 +7,6 @@ const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
 
 exports.registerUser = async (req, res) => {
   try {
-    // Validate user input
-
-
-    // Destructure user data from request body
     const {
       role,
       first_name,
@@ -20,21 +16,16 @@ exports.registerUser = async (req, res) => {
       confirm_password,
       national_number,
       specializations,
-      certification,
-      status
+      certification
     } = req.body;
 
-    // Check if the password and confirm_password match
     if (password !== confirm_password) {
       return res.status(400).json({ error: "Passwords don't match" });
     }
 
-
-
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userStatus = role === 'lawyer' ? 'pending' : null;
 
-    // Create user in the database
     const newUser = await User.create({
       role,
       first_name,
@@ -45,16 +36,14 @@ exports.registerUser = async (req, res) => {
       national_number,
       specializations,
       certification,
-      status
+      status: userStatus,
+      personal_image: req.file ? req.file.buffer : null
     });
 
-    // Generate JWT token
-    const token = jwt.sign({ id: newUser.userID , role:newUser.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+    const token = jwt.sign({ id: newUser.userID, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
 
-    // Respond with the token and user data
-    res.status(201).json({ msg: "User has been created", data: newUser, token: token });
+    res.status(201).json({ msg: "User has been created", data: newUser, token });
   } catch (error) {
-    // Handle errors
     console.error('Error registering user:', error);
     res.status(500).json({ error: error.message });
   }
@@ -63,25 +52,52 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   try {
     const { phone_number, password } = req.body;
-    console.log('Login request received for phone_number:', phone_number);
-
-    // Find user by phone_number
     const user = await User.findOne({ where: { phone_number } });
     if (!user) {
-      return res.status(404).json({ error: 'User not found  login' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Compare passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user.userID , role:user.role}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+    if (user.role === 'lawyer' && ['pending', 'reject'].includes(user.status)) {
+      return res.status(403).json({ error: "Account is not active. Please contact admin." });
+    }
 
-    res.json({ token });
+    const token = jwt.sign({ id: user.userID, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+
+    res.json({ token, data: user });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (!['accept', 'reject'].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.role !== 'lawyer') {
+      return res.status(400).json({ error: "Only lawyers' status can be updated" });
+    }
+
+    user.status = status;
+    await user.save();
+
+    res.status(200).json({ msg: "User status updated successfully", data: user });
+  } catch (error) {
+    console.error('Error updating user status:', error);
     res.status(500).json({ error: error.message });
   }
 };
