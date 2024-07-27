@@ -123,7 +123,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
 
 
   res.status(200).json({
-    currentPage: page,
+    page: page,
     limit: limit,
     totalItems: count,
     totalPages: totalPages,
