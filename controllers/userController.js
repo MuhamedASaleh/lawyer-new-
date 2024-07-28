@@ -301,9 +301,7 @@ exports.getLawyersByStatusPending = async (req, res) => {
       offset
     });
 
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No lawyers with status "pending" found' });
-    }
+  
 
     res.json({
       total: count,

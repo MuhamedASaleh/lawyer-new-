@@ -86,101 +86,106 @@ exports.updateCustomerFiles = async (req, res) => {
 };
 
 
-exports.filterCurrentCase = asyncHandler(async (req, res) => {
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 10;
+exports.filterCurrentCase = asyncHandler(async (req, res) =>{ 
+
+  const { status, page = 1, limit = 10 } = req.query;
   console.log(req.user.id);
-  const { status } = req.query;
 
 
   
   let whereCondition = {};
-  const offset = (page - 1) * limit;
-
+  
   if (status) {
     // If status is provided, filter by that status
     whereCondition.status = status;
-    console.log(whereCondition)
+    console.log(whereCondition);
   } else {
     // If status is not provided or is empty, return all cases with specific statuses
     whereCondition.status = {
       [Op.in]: ['inspection', 'court', 'pleadings', 'completed']
     };
-    console.log(whereCondition)
+    console.log(whereCondition);
+    console.log(req.user);
   }
 
-  const cases = await Case.findAll({
-    where: whereCondition,
-    limit,
-    offset,
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
+    limit: limitNumber,
+    offset
   });
 
-  if (!cases || cases.length === 0) {
+  if (!rows || rows.length === 0) {
     return res.status(404).json({ state: 'failed', message: 'nothing to show, Case for current user is empty' });
   }
 
-  const count = cases.length
-  const totalPages = Math.ceil(count / limit);
-
-
-
   res.status(200).json({
-    currentPage: page,
-    limit: limit,
-    totalItems: count,
-    totalPages: totalPages,
-    hasNextPage: page < totalPages,
-    hasPrevPage: page > 1,
-    cases
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
   });
 });
 
+// Filtering and pagination for current cases (inspection, court, pleadings, completed) for admin
 exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
-
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 10;
-  const { status } = req.query;
+  const { status, page = 1, limit = 10 } = req.query;
 
   let whereCondition = {};
-  // Calculate the offset for pagination
-  const offset = (page - 1) * limit;
 
   if (status) {
     // If status is provided, filter by that status
     whereCondition.status = status;
-    console.log(whereCondition)
+    console.log(whereCondition);
   } else {
     // If status is not provided or is empty, return all cases with specific statuses
     whereCondition.status = {
       [Op.in]: ['inspection', 'court', 'pleadings', 'completed']
     };
-    console.log(whereCondition)
+    console.log(whereCondition);
   }
 
-  const cases = await Case.findAll({
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Find cases with pagination
+  const { count, rows } = await Case.findAndCountAll({
     where: whereCondition,
-    limit,
-    offset,
+    limit: limitNumber,
+    offset
   });
 
-  if (!cases || cases.length === 0) {
+  if (!rows || rows.length === 0) {
     return res.status(404).json({ state: 'failed', message: 'nothing to show, Case is empty' });
   }
-  const count = cases.length
-  const totalPages = Math.ceil(count / limit);
-
-
 
   res.status(200).json({
-    currentPage: page,
-    limit: limit,
-    totalItems: count,
-    totalPages: totalPages,
-    hasNextPage: page < totalPages,
-    hasPrevPage: page > 1,
-    cases
+    total: count,
+    totalPages: Math.ceil(count / limitNumber),
+    currentPage: pageNumber,
+    limit: limitNumber,
+    data: rows
   });
 });
+
 
 
 exports.updateCaseStatus = async (req, res) => {
@@ -265,7 +270,13 @@ exports.filterCompletedCases = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-    where: whereCondition,
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
     limit: limitNumber,
     offset
   });
@@ -344,7 +355,13 @@ exports.filterPendingCases = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-    where: whereCondition,
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
     limit: limitNumber,
     offset
   });

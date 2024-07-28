@@ -13,6 +13,7 @@ async function createQuestionAnswer(req, res) {
             answer,
             userID :userId
         });
+      
 
         // Respond with the newly created QuestionAnswer object
         res.status(201).json(newQuestionAnswer);
