@@ -86,9 +86,8 @@ exports.updateCustomerFiles = async (req, res) => {
 };
 
 
-// Filtering and pagination for current cases (inspection, court, pleadings, completed)
+exports.filterCurrentCase = asyncHandler(async (req, res) =>{ 
 
-exports.filterCurrentCase = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 10 } = req.query;
   console.log(req.user.id);
 
@@ -104,6 +103,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
       [Op.in]: ['inspection', 'court', 'pleadings', 'completed']
     };
     console.log(whereCondition);
+    console.log(req.user);
   }
 
   // Convert page and limit to integers
@@ -115,7 +115,13 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-    where: whereCondition,
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
     limit: limitNumber,
     offset
   });
@@ -262,7 +268,13 @@ exports.filterCompletedCases = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-    where: whereCondition,
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
     limit: limitNumber,
     offset
   });
@@ -341,7 +353,13 @@ exports.filterPendingCases = asyncHandler(async (req, res) => {
 
   // Find cases with pagination
   const { count, rows } = await Case.findAndCountAll({
-    where: whereCondition,
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
     limit: limitNumber,
     offset
   });
