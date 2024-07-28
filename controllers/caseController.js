@@ -92,6 +92,8 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
   console.log(req.user.id);
   const { status } = req.query;
 
+
+  
   let whereCondition = {};
   const offset = (page - 1) * limit;
 
