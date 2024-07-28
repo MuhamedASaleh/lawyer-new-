@@ -15,6 +15,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-async-handler": "^1.2.0",
+    "http": "^0.0.1-security",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
@@ -22,6 +23,8 @@
     "nodemon": "^3.1.4",
     "path": "^0.12.7",
     "retry-as-promised": "^7.0.4",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
   }
 }
