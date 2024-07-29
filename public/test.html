@@ -1,129 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Socket.io Voice Call</title>
-  <script src="/socket.io/socket.io.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.io Call Test</title>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>Socket.io Voice Call</h1>
-  <input id="messageInput" type="text" placeholder="Type your message here" />
-  <button onclick="sendMessage()">Send Message</button>
-  <ul id="messages"></ul>
-  <br />
-  <button onclick="startCall()">Start Call</button>
-  <button onclick="answerCall()">Answer Call</button>
-  <audio id="localAudio" autoplay muted></audio>
-  <audio id="remoteAudio" autoplay></audio>
+    <h1>Socket.io Call Test</h1>
+    <button id="callButton">Call</button>
+    <button id="answerButton">Answer</button>
 
-  <script>
-    const socket = io();
-    const messages = document.getElementById('messages');
-    const localAudio = document.getElementById('localAudio');
-    const remoteAudio = document.getElementById('remoteAudio');
-    let localStream;
-    let remoteStream;
-    let peerConnection;
-    const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    <script>
+        const socket = io();
 
-    socket.on('serverMessage', (data) => {
-      console.log('Message from server:', data);
-      const newMessage = document.createElement('li');
-      newMessage.textContent = data;
-      messages.appendChild(newMessage);
-    });
-
-    function sendMessage() {
-      const message = document.getElementById('messageInput').value;
-      socket.emit('message', message);
-    }
-
-    async function startCall() {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localAudio.srcObject = localStream;
-
-      peerConnection = new RTCPeerConnection(configuration);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-          socket.emit('callUser', {
-            signal: event.candidate,
-            from: socket.id,
-            to: 'userIdToCall', // replace with the actual user ID
-            name: 'YourName'
-          });
-        }
-      };
-
-      peerConnection.ontrack = event => {
-        if (!remoteStream) {
-          remoteStream = new MediaStream();
-          remoteAudio.srcObject = remoteStream;
-        }
-        remoteStream.addTrack(event.track);
-      };
-
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-
-      socket.emit('callUser', {
-        signal: offer,
-        from: socket.id,
-        to: 'userIdToCall', // replace with the actual user ID
-        name: 'YourName'
-      });
-    }
-
-    socket.on('callMade', async (data) => {
-      await handleIncomingCall(data);
-    });
-
-    async function handleIncomingCall(data) {
-      if (!peerConnection) {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        localAudio.srcObject = localStream;
-
-        peerConnection = new RTCPeerConnection(configuration);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        peerConnection.onicecandidate = event => {
-          if (event.candidate) {
-            socket.emit('acceptCall', {
-              signal: event.candidate,
-              from: socket.id,
-              to: data.from
+        // Calling logic
+        document.getElementById('callButton').addEventListener('click', () => {
+            socket.emit('callUser', { 
+                signal: 'callingSignal', // Replace with actual signal data
+                from: socket.id, 
+                name: 'CallerName' // Replace with actual caller's name
             });
-          }
-        };
+        });
 
-        peerConnection.ontrack = event => {
-          if (!remoteStream) {
-            remoteStream = new MediaStream();
-            remoteAudio.srcObject = remoteStream;
-          }
-          remoteStream.addTrack(event.track);
-        };
-      }
+        // Answering logic
+        document.getElementById('answerButton').addEventListener('click', () => {
+            const signal = 'answeringSignal'; // Replace with actual signal data
+            socket.emit('acceptCall', { 
+                signal: signal, 
+                from: socket.callerId // Use the caller's ID stored during the call initiation
+            });
+        });
 
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
+        // Notification when a call is made
+        socket.on('callMade', (data) => {
+            console.log('Incoming call from:', data.from);
+            alert(`Incoming call from ${data.name}`);
+            socket.callerId = data.from; // Store the caller's ID for answering later
+        });
 
-      socket.emit('acceptCall', {
-        signal: answer,
-        from: socket.id,
-        to: data.from
-      });
-    }
-
-    socket.on('callAccepted', async (signal) => {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
-    });
-
-    function answerCall() {
-      // This function is now effectively handled in the 'callMade' event listener
-    }
-  </script>
+        // Handling call acceptance
+        socket.on('callAccepted', (signal) => {
+            console.log('Call accepted:', signal);
+            // Add code to handle the call acceptance and start the call
+        });
+    </script>
 </body>
 </html>

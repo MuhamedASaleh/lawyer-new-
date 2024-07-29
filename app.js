@@ -102,6 +102,9 @@
 
 //   // Add additional event listeners here
 // });
+
+
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -183,27 +186,25 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 
-  // Handle messages
-  socket.on('message', (data) => {
-    console.log('Message received from client:', data);
-    socket.broadcast.emit('serverMessage', data);
-  });
-
-  // Handle voice call signaling
+  // Handle call initiation
   socket.on('callUser', (data) => {
-    console.log('Calling user:', data.to);
-    io.to(data.to).emit('callMade', {
+    console.log('Calling user');
+    socket.broadcast.emit('callMade', {
       signal: data.signal,
-      from: data.from,
+      from: socket.id,
       name: data.name
     });
   });
 
+  // Handle call acceptance
   socket.on('acceptCall', (data) => {
-    console.log('Call accepted by:', data.to);
-    io.to(data.to).emit('callAccepted', data.signal);
+    console.log('Call accepted');
+    io.to(data.from).emit('callAccepted', data.signal);
   });
 
-  // Additional events can be handled here
+  // Handle messaging
+  socket.on('message', (data) => {
+    console.log('Message received from client:', data);
+    socket.broadcast.emit('serverMessage', data);
+  });
 });
-
