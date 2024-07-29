@@ -412,18 +412,37 @@ exports.filterPendingCasesAdmin = asyncHandler(async (req, res) => {
 });
 
 //get length or count of cases by filter status 
-exports.getCaseCount = asyncHandler(async (req, res) => {
+exports.countCases = asyncHandler(async (req, res) => {
   const { status } = req.query;
 
   let whereCondition = {};
 
-  if (status && ['inspection', 'court', 'pleadings', 'completed', 'won', 'lost', 'pending', 'accepted', 'decline'].includes(status)) {
-    // If status is provided and valid, filter by that status
+  if (status) {
+    // If status is provided, filter by that status
     whereCondition.status = status;
+  } else {
+    // If status is not provided, count all cases
+    whereCondition.status = {
+      [Op.in]: [
+        'inspection', 'court', 'pleadings', 'completed',
+        'won', 'lost', 'pending', 'accepted', 'decline'
+      ]
+    };
   }
 
-  // Count the cases with the specified condition
-  const count = await Case.count({ where: whereCondition });
+  // Find case count
+  const caseCount = await Case.count({
+    where: {
+      ...whereCondition,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    }
+  });
 
-  res.status(200).json({ count });
+  res.status(200).json({
+    totalCount: caseCount
+  });
 });
+
