@@ -91,6 +91,8 @@ exports.filterCurrentCase = asyncHandler(async (req, res) =>{
   const { status, page = 1, limit = 10 } = req.query;
   console.log(req.user.id);
 
+
+  
   let whereCondition = {};
   
   if (status) {
