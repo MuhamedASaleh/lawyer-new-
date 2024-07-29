@@ -168,10 +168,9 @@ const io = socketIo(server);
 app.use(express.static('public'));
 
 const port = process.env.PORT || 5050;
-
-// In-memory storage for user names and socket IDs
 const users = {};
 
+// Serve the test HTML file
 app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
@@ -179,60 +178,48 @@ app.get('/test', (req, res) => {
 io.on('connection', (socket) => {
   console.log('New client connected: ' + socket.id);
 
-  // Handle user registration
   socket.on('registerUser', (name) => {
     users[name] = socket.id;
-    io.emit('updateUsers', Object.keys(users)); // Notify all clients of the user list update
+    io.emit('updateUsers', Object.keys(users));
+    console.log('Users:', users);
   });
 
-  // Handle call
   socket.on('callUser', (data) => {
-    const { userToCall, signalData } = data;
-    const socketId = users[userToCall];
-    if (socketId) {
-      io.to(socketId).emit('callUser', {
-        signal: signalData,
-        from: socket.id,
-      });
-    }
+    const userToCallSocketId = users[data.userToCall];
+    io.to(userToCallSocketId).emit('callUser', {
+      signal: data.signalData,
+      from: socket.id,
+    });
   });
 
-  // Handle answer
   socket.on('answerCall', (data) => {
-    const { to, signal } = data;
-    const socketId = users[to];
-    if (socketId) {
-      io.to(socketId).emit('callAccepted', {
-        signal,
-        from: socket.id,
-      });
-    }
+    const callerSocketId = users[data.to];
+    io.to(callerSocketId).emit('callAccepted', {
+      signal: data.signal,
+      from: socket.id,
+    });
   });
 
-  // Handle ICE candidate
   socket.on('iceCandidate', (data) => {
-    const { to, candidate } = data;
-    const socketId = users[to];
-    if (socketId) {
-      io.to(socketId).emit('iceCandidate', { candidate });
-    }
+    const candidateRecipientSocketId = users[data.to];
+    io.to(candidateRecipientSocketId).emit('iceCandidate', {
+      candidate: data.candidate,
+    });
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('Client disconnected: ' + socket.id);
-    // Remove user from the list and notify others
-    for (let name in users) {
-      if (users[name] === socket.id) {
-        delete users[name];
-        io.emit('updateUsers', Object.keys(users)); // Notify all clients of the user list update
+    for (let user in users) {
+      if (users[user] === socket.id) {
+        delete users[user];
         break;
       }
     }
+    io.emit('updateUsers', Object.keys(users));
+    console.log('Users:', users);
   });
 });
 
 server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
