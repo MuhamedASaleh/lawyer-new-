@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voice Call</title>
+  <title>Voice Call Test</title>
   <style>
     body { font-family: Arial, sans-serif; }
     #callBtn, #answerBtn, #endCallBtn { margin-top: 10px; }
@@ -11,12 +11,17 @@
 </head>
 <body>
   <h1>Voice Call Test</h1>
-  <input type="text" id="callTo" placeholder="Enter user ID to call" />
-  <button id="callBtn">Call</button>
+  <input type="text" id="userName" placeholder="Enter your name" />
+  <button id="registerBtn">Register</button>
+  <br>
+  <input type="text" id="callTo" placeholder="Enter user name to call" />
+  <button id="callBtn" disabled>Call</button>
   <button id="answerBtn" disabled>Answer</button>
   <button id="endCallBtn" disabled>End Call</button>
   <audio id="remoteAudio" autoplay></audio>
   <audio id="localAudio" autoplay muted></audio>
+  <br>
+  <div id="usersList"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -24,16 +29,36 @@
     let peerConnection;
     let localStream;
     let remoteStream;
+    let queuedCandidates = [];
     const configuration = {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     };
 
+    const userNameInput = document.getElementById('userName');
+    const registerBtn = document.getElementById('registerBtn');
     const callToInput = document.getElementById('callTo');
     const callBtn = document.getElementById('callBtn');
     const answerBtn = document.getElementById('answerBtn');
     const endCallBtn = document.getElementById('endCallBtn');
     const remoteAudio = document.getElementById('remoteAudio');
     const localAudio = document.getElementById('localAudio');
+    const usersList = document.getElementById('usersList');
+
+    // Register user
+    registerBtn.addEventListener('click', () => {
+      const name = userNameInput.value;
+      if (name) {
+        socket.emit('registerUser', name);
+        registerBtn.disabled = true;
+        callBtn.disabled = false;
+        answerBtn.disabled = false;
+      }
+    });
+
+    // Update user list
+    socket.on('updateUsers', (users) => {
+      usersList.innerHTML = '<h2>Users:</h2>' + users.map(user => `<div>${user}</div>`).join('');
+    });
 
     // Start call
     callBtn.addEventListener('click', async () => {
@@ -114,12 +139,21 @@
     // Handle call accepted
     socket.on('callAccepted', async ({ signal }) => {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+      // Add any queued ICE candidates
+      while (queuedCandidates.length > 0) {
+        const candidate = queuedCandidates.shift();
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      }
     });
 
     // Handle ICE candidates
-    socket.on('iceCandidate', ({ candidate }) => {
+    socket.on('iceCandidate', async ({ candidate }) => {
       if (peerConnection) {
-        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        if (peerConnection.remoteDescription) {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          queuedCandidates.push(candidate);
+        }
       }
     });
 

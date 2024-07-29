@@ -102,7 +102,60 @@
 
 //   // Add additional event listeners here
 // });
+///////////////////////////////////////////////////
+// const express = require('express');
+// const http = require('http');
+// const socketIo = require('socket.io');
+// const path = require('path');
 
+// const app = express();
+// const server = http.createServer(app);
+// const io = socketIo(server);
+
+// app.use(express.static('public'));
+
+// const port = process.env.PORT || 5050;
+
+
+// // Serve the test HTML file
+// app.get('/test', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'test.html'));
+// });
+
+// io.on('connection', (socket) => {
+//   console.log('New client connected: ' + socket.id);
+
+//   socket.on('callUser', (data) => {
+//     io.to(data.userToCall).emit('callUser', {
+//       signal: data.signalData,
+//       from: socket.id,
+//     });
+//   });
+
+//   socket.on('answerCall', (data) => {
+//     io.to(data.to).emit('callAccepted', {
+//       signal: data.signal,
+//       from: socket.id,
+//     });
+//   });
+
+//   socket.on('iceCandidate', (data) => {
+//     io.to(data.to).emit('iceCandidate', {
+//       candidate: data.candidate,
+//     });
+//   });
+
+//   socket.on('disconnect', () => {
+//     console.log('Client disconnected: ' + socket.id);
+//     // Notify other clients about disconnection
+//     io.emit('userDisconnected', socket.id);
+//   });
+// });
+
+// server.listen(port, () => {
+//   console.log(`Server is running on http://localhost:${port}`);
+// });
+/////////////////////////////////////////////
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -116,7 +169,9 @@ app.use(express.static('public'));
 
 const port = process.env.PORT || 5050;
 
-// Serve the test HTML file
+// In-memory storage for user names and socket IDs
+const users = {};
+
 app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
@@ -124,33 +179,60 @@ app.get('/test', (req, res) => {
 io.on('connection', (socket) => {
   console.log('New client connected: ' + socket.id);
 
+  // Handle user registration
+  socket.on('registerUser', (name) => {
+    users[name] = socket.id;
+    io.emit('updateUsers', Object.keys(users)); // Notify all clients of the user list update
+  });
+
+  // Handle call
   socket.on('callUser', (data) => {
-    io.to(data.userToCall).emit('callUser', {
-      signal: data.signalData,
-      from: socket.id,
-    });
+    const { userToCall, signalData } = data;
+    const socketId = users[userToCall];
+    if (socketId) {
+      io.to(socketId).emit('callUser', {
+        signal: signalData,
+        from: socket.id,
+      });
+    }
   });
 
+  // Handle answer
   socket.on('answerCall', (data) => {
-    io.to(data.to).emit('callAccepted', {
-      signal: data.signal,
-      from: socket.id,
-    });
+    const { to, signal } = data;
+    const socketId = users[to];
+    if (socketId) {
+      io.to(socketId).emit('callAccepted', {
+        signal,
+        from: socket.id,
+      });
+    }
   });
 
+  // Handle ICE candidate
   socket.on('iceCandidate', (data) => {
-    io.to(data.to).emit('iceCandidate', {
-      candidate: data.candidate,
-    });
+    const { to, candidate } = data;
+    const socketId = users[to];
+    if (socketId) {
+      io.to(socketId).emit('iceCandidate', { candidate });
+    }
   });
 
+  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('Client disconnected: ' + socket.id);
-    // Notify other clients about disconnection
-    io.emit('userDisconnected', socket.id);
+    // Remove user from the list and notify others
+    for (let name in users) {
+      if (users[name] === socket.id) {
+        delete users[name];
+        io.emit('updateUsers', Object.keys(users)); // Notify all clients of the user list update
+        break;
+      }
+    }
   });
 });
 
 server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
