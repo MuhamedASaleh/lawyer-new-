@@ -156,71 +156,50 @@
 //   console.log(`Server is running on http://localhost:${port}`);
 // });
 /////////////////////////////////////////////
+
+
+const path = require('path');
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-app.use(express.static('public'));
-
-const port = process.env.PORT || 5050;
-const users = {};
-
-// Serve the test HTML file
+// // Serve the test HTML file
 app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
+
 io.on('connection', (socket) => {
-  console.log('New client connected: ' + socket.id);
+    console.log('A user connected');
 
-  socket.on('registerUser', (name) => {
-    users[name] = socket.id;
-    io.emit('updateUsers', Object.keys(users));
-    console.log('Users:', users);
-  });
-
-  socket.on('callUser', (data) => {
-    const userToCallSocketId = users[data.userToCall];
-    io.to(userToCallSocketId).emit('callUser', {
-      signal: data.signalData,
-      from: data.from,
-      name: data.name
+    socket.on('offer', (data) => {
+        socket.to(data.target).emit('offer', {
+            sdp: data.sdp,
+            caller: socket.id,
+        });
     });
-  });
 
-  socket.on('answerCall', (data) => {
-    const callerSocketId = data.from;
-    io.to(callerSocketId).emit('callAccepted', {
-      signal: data.signal,
-      from: data.to
+    socket.on('answer', (data) => {
+        socket.to(data.target).emit('answer', {
+            sdp: data.sdp,
+            callee: socket.id,
+        });
     });
-  });
 
-  socket.on('iceCandidate', (data) => {
-    const candidateRecipientSocketId = users[data.to];
-    io.to(candidateRecipientSocketId).emit('iceCandidate', {
-      candidate: data.candidate
+    socket.on('candidate', (data) => {
+        socket.to(data.target).emit('candidate', data.candidate);
     });
-  });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected: ' + socket.id);
-    for (let user in users) {
-      if (users[user] === socket.id) {
-        delete users[user];
-        break;
-      }
-    }
-    io.emit('updateUsers', Object.keys(users));
-    console.log('Users:', users);
-  });
+    socket.on('disconnect', () => {
+        console.log('A user disconnected');
+    });
 });
 
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+server.listen(5050, () => {
+    console.log('Server is listening on port 3000');
 });
