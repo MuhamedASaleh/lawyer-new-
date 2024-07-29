@@ -443,6 +443,10 @@ exports.countCases = asyncHandler(async (req, res) => {
     }
   });
 
+  if (caseCount === 0) {
+    return res.status(200).json({});
+  }
+
   res.status(200).json({
     totalCount: caseCount
   });
