@@ -2,25 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Socket.io Video Call</title>
+  <title>Socket.io Voice Call</title>
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <h1>Socket.io Video Call</h1>
+  <h1>Socket.io Voice Call</h1>
   <input id="messageInput" type="text" placeholder="Type your message here" />
   <button onclick="sendMessage()">Send Message</button>
   <ul id="messages"></ul>
   <br />
   <button onclick="startCall()">Start Call</button>
   <button onclick="answerCall()">Answer Call</button>
-  <video id="localVideo" autoplay muted></video>
-  <video id="remoteVideo" autoplay></video>
+  <audio id="localAudio" autoplay muted></audio>
+  <audio id="remoteAudio" autoplay></audio>
 
   <script>
     const socket = io();
     const messages = document.getElementById('messages');
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
+    const localAudio = document.getElementById('localAudio');
+    const remoteAudio = document.getElementById('remoteAudio');
     let localStream;
     let remoteStream;
     let peerConnection;
@@ -39,8 +39,8 @@
     }
 
     async function startCall() {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localAudio.srcObject = localStream;
 
       peerConnection = new RTCPeerConnection(configuration);
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -59,7 +59,7 @@
       peerConnection.ontrack = event => {
         if (!remoteStream) {
           remoteStream = new MediaStream();
-          remoteVideo.srcObject = remoteStream;
+          remoteAudio.srcObject = remoteStream;
         }
         remoteStream.addTrack(event.track);
       };
@@ -81,8 +81,8 @@
 
     async function handleIncomingCall(data) {
       if (!peerConnection) {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localAudio.srcObject = localStream;
 
         peerConnection = new RTCPeerConnection(configuration);
         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -100,7 +100,7 @@
         peerConnection.ontrack = event => {
           if (!remoteStream) {
             remoteStream = new MediaStream();
-            remoteVideo.srcObject = remoteStream;
+            remoteAudio.srcObject = remoteStream;
           }
           remoteStream.addTrack(event.track);
         };

@@ -189,7 +189,7 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('serverMessage', data);
   });
 
-  // Handle video call signaling
+  // Handle voice call signaling
   socket.on('callUser', (data) => {
     console.log('Calling user:', data.to);
     io.to(data.to).emit('callMade', {
