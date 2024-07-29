@@ -112,10 +112,10 @@ const path = require('path');
 
 const app = express();
 require("dotenv").config({ path: ".env" });
+const sequelize = require('./config/dbConfig');
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-// Setup
 app.use(express.static(path.join(__dirname, 'public')));
 let port = process.env.PORT || 5050;
 
@@ -125,8 +125,21 @@ const server = http.createServer(app);
 // Integrate Socket.io with the server
 const io = socketIo(server);
 
-// In-memory storage for users
-let users = {};
+app.get('/', (req, res) => {
+  res.send('home');
+});
+
+// db connection
+sequelize.sync({ force: false })
+  .then(() => {
+    console.log('Database synced');
+    server.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  })
+  .catch(err => {
+    console.error('Error syncing database:', err);
+  });
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
@@ -142,45 +155,34 @@ app.get('/test', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`New client connected: ${socket.id}`);
 
-  // Handle setting username
-  socket.on('setUsername', (username) => {
-    users[socket.id] = username;
-    io.emit('userList', Object.values(users)); // Broadcast the updated user list
-    console.log(`Username set for ${socket.id}: ${username}`);
-  });
-
-  // Handle calling another user
-  socket.on('callUser', ({ userToCall, signalData }) => {
-    const toSocketId = Object.keys(users).find(id => users[id] === userToCall);
-    if (toSocketId) {
-      io.to(toSocketId).emit('callUser', { signal: signalData, from: users[socket.id] });
-    }
-  });
-
-  // Handle answering a call
-  socket.on('answerCall', ({ to, signal }) => {
-    const toSocketId = Object.keys(users).find(id => users[id] === to);
-    if (toSocketId) {
-      io.to(toSocketId).emit('callAccepted', signal);
-    }
-  });
-
-  // Handle ICE candidate
-  socket.on('iceCandidate', ({ candidate, to }) => {
-    if (to) {
-      io.to(to).emit('iceCandidate', candidate);
-    }
-  });
-
-  // Handle disconnection
   socket.on('disconnect', () => {
-    delete users[socket.id];
-    io.emit('userList', Object.values(users)); // Broadcast the updated user list
     console.log(`Client disconnected: ${socket.id}`);
+    socket.broadcast.emit('callEnded');
   });
-});
 
-// Start server
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  socket.on('setUsername', (username) => {
+    socket.username = username;
+    io.emit('updateUsers', getUsers());
+  });
+
+  socket.on('callUser', (data) => {
+    io.to(data.userToCall).emit('callUser', { signal: data.signalData, from: socket.id, name: socket.username });
+  });
+
+  socket.on('answerCall', (data) => {
+    io.to(data.to).emit('callAccepted', { signal: data.signal, from: socket.id });
+  });
+
+  socket.on('iceCandidate', (data) => {
+    io.to(data.to).emit('iceCandidate', { candidate: data.candidate });
+  });
+
+  function getUsers() {
+    const clients = io.sockets.sockets;
+    const users = {};
+    for (const id in clients) {
+      users[id] = clients[id].username || 'Anonymous';
+    }
+    return users;
+  }
 });

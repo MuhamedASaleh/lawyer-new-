@@ -15,7 +15,7 @@
 </head>
 <body>
   <h1>Voice Call Test</h1>
-  <input type="text" id="username" placeholder="Enter your username 1" />
+  <input type="text" id="username" placeholder="Enter your username 2" />
   <button id="setUsernameBtn">Set Username</button>
   <br>
   <input type="text" id="callTo" placeholder="Enter username to call" />
@@ -32,8 +32,8 @@
     let peerConnection;
     let localStream;
     let remoteStream;
-    let users = {};
     let remoteUser = '';
+    let username = '';
 
     const usernameInput = document.getElementById('username');
     const setUsernameBtn = document.getElementById('setUsernameBtn');
@@ -50,7 +50,7 @@
 
     // Set the username
     setUsernameBtn.addEventListener('click', () => {
-      const username = usernameInput.value;
+      username = usernameInput.value;
       if (username) {
         socket.emit('setUsername', username);
       }
@@ -61,8 +61,8 @@
       console.log(`Incoming call from ${from}`);
       const answer = confirm(`You have an incoming call from ${from}. Answer?`);
       if (answer) {
-        startPeerConnection();
         remoteUser = from;
+        startPeerConnection();
         await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
         const answerDescription = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answerDescription);
@@ -78,17 +78,14 @@
     });
 
     // Handle call accepted
-    socket.on('callAccepted', async (signal) => {
-      if (!peerConnection) {
-        startPeerConnection();
-      }
+    socket.on('callAccepted', async ({ signal }) => {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
     });
 
     // Start a call
     callBtn.addEventListener('click', async () => {
-      startPeerConnection();
       remoteUser = callToInput.value;
+      startPeerConnection();
 
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localAudio.srcObject = localStream;
