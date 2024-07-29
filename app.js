@@ -168,7 +168,7 @@ const io = socketIo(server);
 
 // Serve the index.html file at /test endpoint
 app.get('/test', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname,'public', 'test.html'));
 });
 
 io.on('connection', (socket) => {
@@ -201,5 +201,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(5050, () => {
-    console.log('Server is listening on port 3000');
+    console.log('Server is listening on port 5050');
 });
