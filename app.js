@@ -103,6 +103,8 @@
 //   // Add additional event listeners here
 // });
 
+
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -110,17 +112,10 @@ const path = require('path');
 
 const app = express();
 require("dotenv").config({ path: ".env" });
-const sequelize = require('./config/dbConfig');
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const newsRoutes = require('./routes/newsRoutes');
-const caseRoutes = require('./routes/caseRoutes');
-const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
-const adminRoutes = require('./routes/admin/adminRoutes');
-const reviewRoutes = require('./routes/reviewRoute');
 
+// Setup
 app.use(express.static(path.join(__dirname, 'public')));
 let port = process.env.PORT || 5050;
 
@@ -130,46 +125,13 @@ const server = http.createServer(app);
 // Integrate Socket.io with the server
 const io = socketIo(server);
 
-app.get('/', async (req, res) => {
-  res.send('home');
-});
+// In-memory storage for users
+let users = {};
 
-// db connection
-sequelize.sync({ force: false })
-  .then(() => {
-    console.log('Database synced');
-    // Change app.listen to server.listen
-    server.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
-    });
-  })
-  .catch(err => {
-    console.error('Error syncing database:', err);
-  });
-
-app.use(cors({
-  origin: "*",
-}));
-
-// body parser
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-
-// Middleware
-app.use(express.json());
-
-// Routes
-app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
-app.use('/api', newsRoutes);
-app.use('/api/questionAnswer', questionAnswerRoutes);
-app.use('/api', adminRoutes);
-app.use('/api', reviewRoutes);
-app.use('/api/cases', caseRoutes);
-
-const errorMiddleWare = require('./middleware/errorMiddleWare');
-app.use(errorMiddleWare);
 
 // Serve the test HTML file
 app.get('/test', (req, res) => {
@@ -178,37 +140,40 @@ app.get('/test', (req, res) => {
 
 // Socket.io logic
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  console.log(`New client connected: ${socket.id}`);
 
+  // Handle setting username
+  socket.on('setUsername', (username) => {
+    users[socket.id] = username;
+    io.emit('userList', Object.values(users)); // Broadcast the updated user list
+    console.log(`Username set for ${socket.id}: ${username}`);
+  });
+
+  // Handle calling another user
+  socket.on('callUser', ({ userToCall, signalData }) => {
+    const toSocketId = Object.keys(users).find(id => users[id] === userToCall);
+    if (toSocketId) {
+      io.to(toSocketId).emit('callUser', { signal: signalData, from: users[socket.id] });
+    }
+  });
+
+  // Handle answering a call
+  socket.on('answerCall', ({ to, signal }) => {
+    const toSocketId = Object.keys(users).find(id => users[id] === to);
+    if (toSocketId) {
+      io.to(toSocketId).emit('callAccepted', signal);
+    }
+  });
+
+  // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    delete users[socket.id];
+    io.emit('userList', Object.values(users)); // Broadcast the updated user list
+    console.log(`Client disconnected: ${socket.id}`);
   });
+});
 
-  // Handle call initiation
-  socket.on('callUser', (data) => {
-    console.log('Calling user');
-    socket.broadcast.emit('callMade', {
-      signal: data.signal,
-      from: socket.id,
-      name: data.name
-    });
-  });
-
-  // Handle call acceptance
-  socket.on('acceptCall', (data) => {
-    console.log('Call accepted');
-    io.to(data.from).emit('callAccepted', data.signal);
-  });
-
-  // Handle signaling data
-  socket.on('sendSignal', (data) => {
-    console.log('Sending signal:', data);
-    io.to(data.to).emit('receiveSignal', data);
-  });
-
-  // Handle messaging
-  socket.on('message', (data) => {
-    console.log('Message received from client:', data);
-    socket.broadcast.emit('serverMessage', data);
-  });
+// Start server
+server.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
