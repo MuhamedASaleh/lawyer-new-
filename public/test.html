@@ -10,26 +10,46 @@
     <h1>Socket.io Call Test</h1>
     <button id="callButton">Call</button>
     <button id="answerButton">Answer</button>
+    <audio id="remoteAudio" autoplay></audio>
 
     <script>
         const socket = io();
+        const peerConnection = new RTCPeerConnection();
+        let localStream;
 
-        // Calling logic
+        // Get local audio stream
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {
+                localStream = stream;
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            })
+            .catch(error => console.error('Error accessing media devices.', error));
+
+        // Handle call button click
         document.getElementById('callButton').addEventListener('click', () => {
-            socket.emit('callUser', { 
-                signal: 'callingSignal', // Replace with actual signal data
-                from: socket.id, 
-                name: 'CallerName' // Replace with actual caller's name
-            });
+            peerConnection.createOffer()
+                .then(offer => {
+                    peerConnection.setLocalDescription(offer);
+                    socket.emit('callUser', {
+                        signal: offer,
+                        from: socket.id,
+                        name: 'CallerName' // Replace with actual caller's name
+                    });
+                })
+                .catch(error => console.error('Error creating offer.', error));
         });
 
-        // Answering logic
+        // Handle answer button click
         document.getElementById('answerButton').addEventListener('click', () => {
-            const signal = 'answeringSignal'; // Replace with actual signal data
-            socket.emit('acceptCall', { 
-                signal: signal, 
-                from: socket.callerId // Use the caller's ID stored during the call initiation
-            });
+            peerConnection.createAnswer()
+                .then(answer => {
+                    peerConnection.setLocalDescription(answer);
+                    socket.emit('acceptCall', {
+                        signal: answer,
+                        from: socket.callerId // Use the caller's ID stored during the call initiation
+                    });
+                })
+                .catch(error => console.error('Error creating answer.', error));
         });
 
         // Notification when a call is made
@@ -37,13 +57,34 @@
             console.log('Incoming call from:', data.from);
             alert(`Incoming call from ${data.name}`);
             socket.callerId = data.from; // Store the caller's ID for answering later
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal));
         });
 
         // Handling call acceptance
         socket.on('callAccepted', (signal) => {
             console.log('Call accepted:', signal);
-            // Add code to handle the call acceptance and start the call
+            peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
         });
+
+        // Handle receiving signaling data
+        socket.on('receiveSignal', (data) => {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal))
+                .then(() => {
+                    if (data.signal.type === 'offer') {
+                        peerConnection.createAnswer()
+                            .then(answer => {
+                                peerConnection.setLocalDescription(answer);
+                                socket.emit('sendSignal', { to: data.from, signal: answer });
+                            });
+                    }
+                })
+                .catch(error => console.error('Error handling signal:', error));
+        });
+
+        // Set up audio stream
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteAudio').srcObject = event.streams[0];
+        };
     </script>
 </body>
 </html>

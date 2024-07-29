@@ -103,8 +103,6 @@
 //   // Add additional event listeners here
 // });
 
-
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -200,6 +198,12 @@ io.on('connection', (socket) => {
   socket.on('acceptCall', (data) => {
     console.log('Call accepted');
     io.to(data.from).emit('callAccepted', data.signal);
+  });
+
+  // Handle signaling data
+  socket.on('sendSignal', (data) => {
+    console.log('Sending signal:', data);
+    io.to(data.to).emit('receiveSignal', data);
   });
 
   // Handle messaging
