@@ -73,12 +73,18 @@
         audio.srcObject = remoteStream;
       };
 
+      peerConnection.onicecandidate = ({ candidate }) => {
+        if (candidate) {
+          socket.emit('iceCandidate', { candidate, to: Object.keys(users).find(id => users[id] === remoteUser) });
+        }
+      };
+
       peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
 
       socket.emit('callUser', {
-        userToCall: callToInput.value,
+        userToCall: remoteUser,
         signalData: peerConnection.localDescription
       });
     });
@@ -101,6 +107,12 @@
         audio.srcObject = remoteStream;
       };
 
+      peerConnection.onicecandidate = ({ candidate }) => {
+        if (candidate) {
+          socket.emit('iceCandidate', { candidate, to: Object.keys(users).find(id => users[id] === usernameToCall) });
+        }
+      };
+
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
 
@@ -120,12 +132,18 @@
       }
     });
 
+    // Handle ICE candidates
+    socket.on('iceCandidate', ({ candidate }) => {
+      if (peerConnection) {
+        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    });
+
     function startCall() {
       peerConnection = new RTCPeerConnection(configuration);
       peerConnection.onicecandidate = ({ candidate }) => {
         if (candidate) {
-          // Send ICE candidates to the other peer
-          socket.emit('iceCandidate', candidate);
+          socket.emit('iceCandidate', { candidate });
         }
       };
     }

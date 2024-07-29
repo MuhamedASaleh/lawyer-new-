@@ -165,6 +165,13 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle ICE candidate
+  socket.on('iceCandidate', ({ candidate, to }) => {
+    if (to) {
+      io.to(to).emit('iceCandidate', candidate);
+    }
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     delete users[socket.id];
