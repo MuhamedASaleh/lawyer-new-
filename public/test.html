@@ -7,7 +7,6 @@
     <h1>Voice Call</h1>
     <button id="startCall">Start Call</button>
     <button id="endCall">End Call</button>
-    <audio id="localAudio" autoplay></audio>
     <audio id="remoteAudio" autoplay></audio>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -15,11 +14,11 @@
 
         const startCallButton = document.getElementById('startCall');
         const endCallButton = document.getElementById('endCall');
-        const localAudio = document.getElementById('localAudio');
         const remoteAudio = document.getElementById('remoteAudio');
 
         let localStream;
         let peerConnection;
+        let remoteUserId;
 
         const configuration = {
             iceServers: [
@@ -29,7 +28,6 @@
 
         startCallButton.onclick = async () => {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            localAudio.srcObject = localStream;
 
             peerConnection = new RTCPeerConnection(configuration);
 
@@ -60,6 +58,8 @@
         };
 
         socket.on('offer', async data => {
+            remoteUserId = data.caller;
+
             if (!peerConnection) {
                 peerConnection = new RTCPeerConnection(configuration);
 
@@ -77,7 +77,6 @@
                 };
 
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localAudio.srcObject = localStream;
 
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
@@ -108,8 +107,10 @@
         });
 
         endCallButton.onclick = () => {
-            peerConnection.close();
-            peerConnection = null;
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
         };
     </script>
 </body>
