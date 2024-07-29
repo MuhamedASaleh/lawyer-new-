@@ -57,11 +57,22 @@
       };
 
       peerConnection.ontrack = event => {
-        remoteVideo.srcObject = event.streams[0];
+        if (!remoteStream) {
+          remoteStream = new MediaStream();
+          remoteVideo.srcObject = remoteStream;
+        }
+        remoteStream.addTrack(event.track);
       };
 
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
+
+      socket.emit('callUser', {
+        signal: offer,
+        from: socket.id,
+        to: 'userIdToCall', // replace with the actual user ID
+        name: 'YourName'
+      });
     }
 
     socket.on('callMade', async (data) => {
@@ -87,7 +98,11 @@
         };
 
         peerConnection.ontrack = event => {
-          remoteVideo.srcObject = event.streams[0];
+          if (!remoteStream) {
+            remoteStream = new MediaStream();
+            remoteVideo.srcObject = remoteStream;
+          }
+          remoteStream.addTrack(event.track);
         };
       }
 
@@ -107,7 +122,7 @@
     });
 
     function answerCall() {
-      // This function is handled in the 'callMade' event listener
+      // This function is now effectively handled in the 'callMade' event listener
     }
   </script>
 </body>
