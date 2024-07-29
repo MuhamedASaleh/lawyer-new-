@@ -115,7 +115,8 @@
 
         socket.on('candidate', async data => {
             try {
-                await peerConnection.addIceCandidate(data.candidate);
+                const candidate = new RTCIceCandidate(data.candidate);
+                await peerConnection.addIceCandidate(candidate);
             } catch (error) {
                 console.error('Error adding received ICE candidate:', error);
             }
