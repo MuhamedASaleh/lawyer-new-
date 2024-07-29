@@ -157,6 +157,9 @@
 // });
 /////////////////////////////////////////////
 
+ 
+// Serve the index.html file at /test endpoint
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -168,7 +171,7 @@ const io = socketIo(server);
 
 // Serve the index.html file at /test endpoint
 app.get('/test', (req, res) => {
-    res.sendFile(path.join(__dirname,'public', 'test.html'));
+  res.sendFile(path.join(__dirname,'public', 'test.html'));
 });
 
 io.on('connection', (socket) => {
@@ -192,7 +195,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('candidate', (data) => {
-        socket.to(data.target).emit('candidate', data.candidate);
+        socket.to(data.target).emit('candidate', { candidate: data.candidate });
     });
 
     socket.on('disconnect', () => {

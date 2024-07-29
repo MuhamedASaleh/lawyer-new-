@@ -39,7 +39,7 @@
                 peerConnection.onicecandidate = event => {
                     if (event.candidate) {
                         socket.emit('candidate', {
-                            candidate: event.candidate,
+                            candidate: event.candidate.toJSON(),
                             target: remoteUserId
                         });
                     }
@@ -70,7 +70,7 @@
                 peerConnection.onicecandidate = event => {
                     if (event.candidate) {
                         socket.emit('candidate', {
-                            candidate: event.candidate,
+                            candidate: event.candidate.toJSON(),
                             target: data.caller
                         });
                     }
