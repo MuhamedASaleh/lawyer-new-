@@ -27,34 +27,38 @@
         };
 
         startCallButton.onclick = async () => {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            peerConnection = new RTCPeerConnection(configuration);
+                peerConnection = new RTCPeerConnection(configuration);
 
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
 
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    socket.emit('candidate', {
-                        candidate: event.candidate,
-                        target: remoteUserId
-                    });
-                }
-            };
+                peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        socket.emit('candidate', {
+                            candidate: event.candidate,
+                            target: remoteUserId
+                        });
+                    }
+                };
 
-            peerConnection.ontrack = event => {
-                remoteAudio.srcObject = event.streams[0];
-            };
+                peerConnection.ontrack = event => {
+                    remoteAudio.srcObject = event.streams[0];
+                };
 
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
 
-            socket.emit('offer', {
-                sdp: peerConnection.localDescription,
-                target: remoteUserId
-            });
+                socket.emit('offer', {
+                    sdp: peerConnection.localDescription,
+                    target: remoteUserId
+                });
+            } catch (error) {
+                console.error('Error starting call:', error);
+            }
         };
 
         socket.on('offer', async data => {
@@ -76,33 +80,44 @@
                     remoteAudio.srcObject = event.streams[0];
                 };
 
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    localStream.getTracks().forEach(track => {
+                        peerConnection.addTrack(track, localStream);
+                    });
+                } catch (error) {
+                    console.error('Error accessing local media:', error);
+                }
             }
 
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
 
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
 
-            socket.emit('answer', {
-                sdp: peerConnection.localDescription,
-                target: data.caller
-            });
+                socket.emit('answer', {
+                    sdp: peerConnection.localDescription,
+                    target: data.caller
+                });
+            } catch (error) {
+                console.error('Error handling offer:', error);
+            }
         });
 
         socket.on('answer', async data => {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            } catch (error) {
+                console.error('Error handling answer:', error);
+            }
         });
 
         socket.on('candidate', async data => {
             try {
                 await peerConnection.addIceCandidate(data.candidate);
-            } catch (e) {
-                console.error('Error adding received ice candidate', e);
+            } catch (error) {
+                console.error('Error adding received ICE candidate:', error);
             }
         });
 
@@ -112,6 +127,16 @@
                 peerConnection = null;
             }
         };
+
+        // Emit a signal to notify when a new user connects
+        socket.emit('new-user', { userId: socket.id });
+
+        // Listen for new users to set remote user ID
+        socket.on('new-user', data => {
+            if (!remoteUserId) {
+                remoteUserId = data.userId;
+            }
+        });
     </script>
 </body>
 </html>

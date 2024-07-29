@@ -157,25 +157,25 @@
 // });
 /////////////////////////////////////////////
 
-
-const path = require('path');
-
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// // Serve the test HTML file
+// Serve the index.html file at /test endpoint
 app.get('/test', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'test.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
-
 
 io.on('connection', (socket) => {
     console.log('A user connected');
+
+    // Notify others of the new user
+    socket.broadcast.emit('new-user', { userId: socket.id });
 
     socket.on('offer', (data) => {
         socket.to(data.target).emit('offer', {
