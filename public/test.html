@@ -32,6 +32,7 @@
     let localStream;
     let remoteStream;
     let users = {};
+    let remoteUser = '';
 
     const usernameInput = document.getElementById('username');
     const setUsernameBtn = document.getElementById('setUsernameBtn');
@@ -59,41 +60,33 @@
       const answer = confirm(`You have an incoming call from ${from}. Answer?`);
       if (answer) {
         startPeerConnection();
-        socket.emit('answerCall', { to: from, signal });
+        remoteUser = from;
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+        const answerDescription = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answerDescription);
+
+        socket.emit('answerCall', {
+          to: from,
+          signal: peerConnection.localDescription
+        });
+
+        answerBtn.disabled = true;
+        endCallBtn.disabled = false;
       }
     });
 
     // Handle call accepted
     socket.on('callAccepted', async (signal) => {
-      peerConnection = new RTCPeerConnection(configuration);
-      remoteStream = new MediaStream();
-
-      peerConnection.ontrack = (event) => {
-        remoteStream.addTrack(event.track);
-        audio.srcObject = remoteStream;
-      };
-
-      peerConnection.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          socket.emit('iceCandidate', { candidate });
-        }
-      };
-
+      if (!peerConnection) {
+        startPeerConnection();
+      }
       await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      socket.emit('callUser', {
-        userToCall: remoteUser,
-        signalData: peerConnection.localDescription
-      });
     });
 
     // Start a call
     callBtn.addEventListener('click', async () => {
       startPeerConnection();
-      const usernameToCall = callToInput.value;
-      remoteUser = usernameToCall;
+      remoteUser = callToInput.value;
 
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audio.srcObject = localStream;
@@ -108,19 +101,16 @@
         audio.srcObject = remoteStream;
       };
 
-      peerConnection.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          socket.emit('iceCandidate', { candidate, to: Object.keys(users).find(id => users[id] === usernameToCall) });
-        }
-      };
-
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
 
       socket.emit('callUser', {
-        userToCall: usernameToCall,
+        userToCall: remoteUser,
         signalData: peerConnection.localDescription
       });
+
+      callBtn.disabled = true;
+      answerBtn.disabled = false;
     });
 
     // End the call
@@ -131,6 +121,10 @@
         localStream.getTracks().forEach(track => track.stop());
         audio.srcObject = null;
       }
+
+      callBtn.disabled = false;
+      answerBtn.disabled = true;
+      endCallBtn.disabled = true;
     });
 
     // Handle ICE candidates
@@ -150,6 +144,18 @@
 
     function startPeerConnection() {
       peerConnection = new RTCPeerConnection(configuration);
+
+      peerConnection.onicecandidate = ({ candidate }) => {
+        if (candidate) {
+          socket.emit('iceCandidate', { candidate, to: remoteUser });
+        }
+      };
+      
+      peerConnection.ontrack = (event) => {
+        remoteStream = new MediaStream();
+        remoteStream.addTrack(event.track);
+        audio.srcObject = remoteStream;
+      };
     }
   </script>
 </body>
