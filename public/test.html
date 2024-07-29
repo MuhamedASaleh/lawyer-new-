@@ -11,7 +11,7 @@
 </head>
 <body>
   <h1>Voice Call Test</h1>
-  <input type="text" id="userName" placeholder="Enter your name 22" />
+  <input type="text" id="userName" placeholder="Enter your name" />
   <button id="registerBtn">Register</button>
   <br>
   <input type="text" id="callTo" placeholder="Enter user name to call" />
@@ -90,7 +90,9 @@
 
       socket.emit('callUser', {
         userToCall,
-        signalData: peerConnection.localDescription
+        signalData: peerConnection.localDescription,
+        from: userNameInput.value,
+        name: userToCall
       });
 
       callBtn.disabled = true;

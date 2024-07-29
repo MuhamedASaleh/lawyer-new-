@@ -188,22 +188,23 @@ io.on('connection', (socket) => {
     const userToCallSocketId = users[data.userToCall];
     io.to(userToCallSocketId).emit('callUser', {
       signal: data.signalData,
-      from: socket.id,
+      from: data.from,
+      name: data.name
     });
   });
 
   socket.on('answerCall', (data) => {
-    const callerSocketId = users[data.to];
+    const callerSocketId = data.from;
     io.to(callerSocketId).emit('callAccepted', {
       signal: data.signal,
-      from: socket.id,
+      from: data.to
     });
   });
 
   socket.on('iceCandidate', (data) => {
     const candidateRecipientSocketId = users[data.to];
     io.to(candidateRecipientSocketId).emit('iceCandidate', {
-      candidate: data.candidate,
+      candidate: data.candidate
     });
   });
 
