@@ -28,6 +28,10 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    let peerConnection;
+    let localStream;
+    let remoteStream;
+    let users = {};
 
     const usernameInput = document.getElementById('username');
     const setUsernameBtn = document.getElementById('setUsernameBtn');
@@ -36,10 +40,6 @@
     const answerBtn = document.getElementById('answerBtn');
     const endCallBtn = document.getElementById('endCallBtn');
     const audio = document.getElementById('audio');
-
-    let localStream;
-    let peerConnection;
-    let remoteStream;
 
     const configuration = {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -58,7 +58,7 @@
       console.log(`Incoming call from ${from}`);
       const answer = confirm(`You have an incoming call from ${from}. Answer?`);
       if (answer) {
-        startCall();
+        startPeerConnection();
         socket.emit('answerCall', { to: from, signal });
       }
     });
@@ -75,11 +75,11 @@
 
       peerConnection.onicecandidate = ({ candidate }) => {
         if (candidate) {
-          socket.emit('iceCandidate', { candidate, to: Object.keys(users).find(id => users[id] === remoteUser) });
+          socket.emit('iceCandidate', { candidate });
         }
       };
 
-      peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
 
@@ -91,9 +91,10 @@
 
     // Start a call
     callBtn.addEventListener('click', async () => {
-      startCall();
+      startPeerConnection();
       const usernameToCall = callToInput.value;
-      peerConnection = new RTCPeerConnection(configuration);
+      remoteUser = usernameToCall;
+
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audio.srcObject = localStream;
 
@@ -139,13 +140,16 @@
       }
     });
 
-    function startCall() {
+    // Handle user list updates
+    socket.on('userList', (userList) => {
+      users = userList.reduce((acc, user) => {
+        acc[user.id] = user.name;
+        return acc;
+      }, {});
+    });
+
+    function startPeerConnection() {
       peerConnection = new RTCPeerConnection(configuration);
-      peerConnection.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          socket.emit('iceCandidate', { candidate });
-        }
-      };
     }
   </script>
 </body>
