@@ -102,10 +102,9 @@
 
 //   // Add additional event listeners here
 // });
-
 const express = require('express');
-const http = require('http'); // Add this
-const socketIo = require('socket.io'); // Add this
+const http = require('http');
+const socketIo = require('socket.io');
 const path = require('path');
 
 const app = express();
@@ -180,16 +179,31 @@ app.get('/test', (req, res) => {
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
 
-  // Sample event listener for messages
+  // Handle messages
   socket.on('message', (data) => {
-    console.log('Message received:', data);
-    io.emit('message', data); // Broadcast the message to all connected clients
+    console.log('Message received from client:', data);
+    socket.broadcast.emit('serverMessage', data);
   });
 
-  // Add additional event listeners here
+  // Handle video call signaling
+  socket.on('callUser', (data) => {
+    console.log('Calling user:', data.to);
+    io.to(data.to).emit('callMade', {
+      signal: data.signal,
+      from: data.from,
+      name: data.name
+    });
+  });
+
+  socket.on('acceptCall', (data) => {
+    console.log('Call accepted by:', data.to);
+    io.to(data.to).emit('callAccepted', data.signal);
+  });
+
+  // Additional events can be handled here
 });
+
