@@ -43,11 +43,10 @@
 
 ////////////////////
 
-
-// controllers/socketController.js
 exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected');
+
         // Notify others of the new user
         socket.broadcast.emit('new-user', { userId: socket.id });
 
@@ -57,6 +56,7 @@ exports.handleSocketConnection = function (io) {
             socket.to(data.target).emit('incomingCall', {
                 sdp: data.sdp,
                 caller: socket.id,
+                video: data.video // Include video flag
             });
         });
 
@@ -85,4 +85,3 @@ exports.handleSocketConnection = function (io) {
         });
     });
 };
-

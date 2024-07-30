@@ -195,7 +195,6 @@
 
  <!--  -->
 
-
  <!DOCTYPE html>
  <html>
  <head>
@@ -207,8 +206,8 @@
      <button id="startVideoCall">Start Video Call</button>
      <button id="endCall" style="display:none;">End Call</button>
      <audio id="remoteAudio" autoplay></audio>
-     <video id="localVideo" autoplay muted></video>
-     <video id="remoteVideo" autoplay></video>
+     <video id="localVideo" autoplay muted style="width: 300px; height: 300px; display:none;"></video>
+     <video id="remoteVideo" autoplay style="width: 300px; height: 300px; display:none;"></video>
      <div id="callNotification" style="display:none;">
          <p>Incoming call from <span id="callerName"></span></p>
          <button id="acceptCall">Accept</button>
@@ -283,7 +282,8 @@
  
                  socket.emit('offer', {
                      sdp: peerConnection.localDescription,
-                     target: remoteUserId
+                     target: remoteUserId,
+                     video: video
                  });
  
                  // Show end call button and hide start call buttons
@@ -302,6 +302,7 @@
          socket.on('incomingCall', async data => {
              // Set the remote user ID
              remoteUserId = data.caller;
+             isVideoCall = data.video;
  
              // Show call notification
              callNotification.style.display = 'block';
@@ -425,5 +426,3 @@
  </body>
  </html>
  
- 
-
