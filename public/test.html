@@ -238,7 +238,7 @@
     <title>Voice and Video Call with WebRTC and Socket.io</title>
 </head>
 <body>
-    <h1>Voice and Video Call 2</h1>
+    <h1>Voice and Video Call 3</h1>
     <button id="startVoiceCall">Start Voice Call</button>
     <button id="startVideoCall">Start Video Call</button>
     <button id="endCall" style="display:none;">End Call</button>
@@ -270,7 +270,7 @@
         const endCallNotification = document.getElementById('endCallNotification');
 
         let localStream;
-        var peerConnection =new RTCPeerConnection(configuration) ;
+        let peerConnection;
         let remoteUserId;
         let isVideoCall = false;
         let isCallActive = false;
@@ -280,6 +280,28 @@
                 { urls: 'stun:stun.l.google.com:19302' }
             ]
         };
+
+        async function initializePeerConnection() {
+            peerConnection = new RTCPeerConnection(configuration);
+
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    socket.emit('candidate', {
+                        candidate: event.candidate.toJSON(),
+                        target: remoteUserId
+                    });
+                }
+            };
+
+            peerConnection.ontrack = event => {
+                if (event.track.kind === 'video') {
+                    remoteVideo.srcObject = event.streams[0];
+                    remoteVideo.style.display = 'block';
+                } else {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            };
+        }
 
         async function startCall(video) {
             try {
@@ -291,36 +313,19 @@
                     remoteAudio.srcObject = localStream;
                 }
 
-                // peerConnection = new RTCPeerConnection(configuration);
+                await initializePeerConnection();
 
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
                 });
-
-                peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.emit('candidate', {
-                            candidate: event.candidate.toJSON(),
-                            target: remoteUserId
-                        });
-                    }
-                };
-
-                peerConnection.ontrack = event => {
-                    if (event.track.kind === 'video') {
-                        remoteVideo.srcObject = event.streams[0];
-                        remoteVideo.style.display = 'block';
-                    } else {
-                        remoteAudio.srcObject = event.streams[0];
-                    }
-                };
 
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
                 socket.emit('offer', {
                     sdp: peerConnection.localDescription,
-                    target: remoteUserId
+                    target: remoteUserId,
+                    isVideoCall: video
                 });
 
                 // Show end call button and hide start call buttons
@@ -354,25 +359,7 @@
                 callNotification.style.display = 'none';
 
                 try {
-                    peerConnection = new RTCPeerConnection(configuration);
-
-                    peerConnection.onicecandidate = event => {
-                        if (event.candidate) {
-                            socket.emit('candidate', {
-                                candidate: event.candidate.toJSON(),
-                                target: remoteUserId
-                            });
-                        }
-                    };
-
-                    peerConnection.ontrack = event => {
-                        if (event.track.kind === 'video') {
-                            remoteVideo.srcObject = event.streams[0];
-                            remoteVideo.style.display = 'block';
-                        } else {
-                            remoteAudio.srcObject = event.streams[0];
-                        }
-                    };
+                    await initializePeerConnection();
 
                     localStream = await navigator.mediaDevices.getUserMedia({ video: data.isVideoCall, audio: true });
                     if (data.isVideoCall) {
@@ -415,7 +402,11 @@
 
         socket.on('answer', async data => {
             try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                if (peerConnection) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                } else {
+                    console.error('PeerConnection is not initialized.');
+                }
             } catch (error) {
                 console.error('Error handling answer:', error);
             }
