@@ -10,8 +10,8 @@ const {
   updateCustomerFiles, 
   filterPendingCases,
   filterPendingCasesAdmin,
-  getCaseCount,
-  countCases
+  countCases,
+  getCaseStatistics
 } = require('../controllers/caseController');
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
@@ -49,6 +49,8 @@ router.get('/filterPendingCasesAdmin', Auth, AuthorizeRole('admin'), filterPendi
 
 router.get('/caseCount', Auth, countCases);
 
+// get all cases for user(lawyer or customer ) by statistics  (day month year)
+router.get('/statistics', Auth, getCaseStatistics);
 
 
 module.exports = router;
