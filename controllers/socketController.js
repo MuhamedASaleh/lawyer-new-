@@ -36,7 +36,6 @@
 // };
 //////////////////////////////
 
-
 // controllers/socketController.js
 exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
@@ -51,9 +50,6 @@ exports.handleSocketConnection = function (io) {
                 sdp: data.sdp,
                 caller: socket.id,
             });
-
-            // Notify the caller of the status (if needed)
-            socket.emit('callInitiated', { target: data.target });
         });
 
         // Handle incoming answer
@@ -81,4 +77,3 @@ exports.handleSocketConnection = function (io) {
         });
     });
 };
-
