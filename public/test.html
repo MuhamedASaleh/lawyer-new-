@@ -270,7 +270,7 @@
         const endCallNotification = document.getElementById('endCallNotification');
 
         let localStream;
-        let peerConnection;
+        var peerConnection =new RTCPeerConnection(configuration) ;
         let remoteUserId;
         let isVideoCall = false;
         let isCallActive = false;
@@ -291,7 +291,7 @@
                     remoteAudio.srcObject = localStream;
                 }
 
-                peerConnection = new RTCPeerConnection(configuration);
+                // peerConnection = new RTCPeerConnection(configuration);
 
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
