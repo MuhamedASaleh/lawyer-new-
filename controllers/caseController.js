@@ -3,6 +3,7 @@ const Case = require('../models/caseModel')
 const { Op } = require('sequelize');
 
 const asyncHandler = require('express-async-handler');
+const sequelize = require('../config/dbConfig');
 
 exports.createCase = async (req, res) => {
   try {
@@ -454,4 +455,74 @@ exports.countCases = asyncHandler(async (req, res) => {
   };
 
   res.status(200).json(response);
+});
+
+exports.getCaseStatistics = asyncHandler(async (req, res) => {
+  const { year, month } = req.query;
+
+  // Validate and parse the dates
+  let start, end;
+
+  if (year && month) {
+    start = new Date(year, month - 1, 1);
+    end = new Date(year, month, 0, 23, 59, 59);
+  } else if (year) {
+    start = new Date(year, 0, 1);
+    end = new Date(year, 11, 31, 23, 59, 59);
+  } else {
+    return res.status(400).json({ error: 'Year is required' });
+  }
+
+  // Aggregate the cases
+  const cases = await Case.findAll({
+    attributes: [
+      [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
+      [sequelize.fn('YEAR', sequelize.col('createdAt')), 'year'],
+      [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
+      [sequelize.fn('DAY', sequelize.col('createdAt')), 'day'],
+      'status',
+      [sequelize.fn('COUNT', sequelize.col('caseID')), 'count']
+    ],
+    where: {
+      createdAt: {
+        [Op.between]: [start, end]
+      },
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    },
+    group: ['date', 'status', 'year', 'month', 'day']
+  });
+
+  const statistics = {
+    daily: {},
+    monthly: {},
+    yearly: {}
+  };
+
+  cases.forEach(caseData => {
+    const date = caseData.get('date');
+    const year = caseData.get('year');
+    const month = caseData.get('month');
+    const day = caseData.get('day');
+    const status = caseData.get('status');
+    const count = caseData.get('count');
+
+    if (!statistics.daily[date]) {
+      statistics.daily[date] = {};
+    }
+    if (!statistics.monthly[`${year}-${month}`]) {
+      statistics.monthly[`${year}-${month}`] = {};
+    }
+    if (!statistics.yearly[year]) {
+      statistics.yearly[year] = {};
+    }
+
+    statistics.daily[date][status] = count;
+    statistics.monthly[`${year}-${month}`][status] = count;
+    statistics.yearly[year][status] = count;
+  });
+
+  res.status(200).json(statistics);
 });
