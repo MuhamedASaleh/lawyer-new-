@@ -238,7 +238,7 @@
     <title>Voice and Video Call with WebRTC and Socket.io</title>
 </head>
 <body>
-    <h1>Voice and Video Call</h1>
+    <h1>Voice and Video Call 2</h1>
     <button id="startVoiceCall">Start Voice Call</button>
     <button id="startVideoCall">Start Video Call</button>
     <button id="endCall" style="display:none;">End Call</button>
@@ -374,8 +374,8 @@
                         }
                     };
 
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
-                    if (isVideoCall) {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: data.isVideoCall, audio: true });
+                    if (data.isVideoCall) {
                         localVideo.srcObject = localStream;
                         localVideo.style.display = 'block';
                     } else {
