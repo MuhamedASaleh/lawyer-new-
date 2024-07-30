@@ -12,7 +12,7 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ error: 'User not found user by id' });
     }
 
-    res.json(user);
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

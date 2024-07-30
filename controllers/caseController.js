@@ -414,41 +414,44 @@ exports.filterPendingCasesAdmin = asyncHandler(async (req, res) => {
 });
 
 //get length or count of cases by filter status 
+
 exports.countCases = asyncHandler(async (req, res) => {
-  const { status } = req.query;
+  // Define all possible statuses
+  const statuses = [
+    'inspection', 'court', 'pleadings', 'completed',
+    'won', 'lost', 'pending', 'accepted', 'decline'
+  ];
 
-  let whereCondition = {};
+  let whereCondition = {
+    [Op.or]: [
+      { lawyerId: req.user.id },
+      { customerId: req.user.id }
+    ]
+  };
 
-  if (status) {
-    // If status is provided, filter by that status
-    whereCondition.status = status;
-  } else {
-    // If status is not provided, count all cases
-    whereCondition.status = {
-      [Op.in]: [
-        'inspection', 'court', 'pleadings', 'completed',
-        'won', 'lost', 'pending', 'accepted', 'decline'
-      ]
-    };
-  }
+  // Find case count for each status type
+  const counts = await Promise.all(
+    statuses.map(async (status) => {
+      const count = await Case.count({
+        where: {
+          ...whereCondition,
+          status: status
+        }
+      });
+      return { status, count };
+    })
+  );
 
-  // Find case count
-  const caseCount = await Case.count({
-    where: {
-      ...whereCondition,
-      [Op.or]: [
-        { lawyerId: req.user.id },
-        { customerId: req.user.id }
-      ]
-    }
-  });
+  // Calculate the total count
+  const totalCount = counts.reduce((acc, curr) => acc + curr.count, 0);
 
-  if (caseCount === 0) {
-    return res.status(200).json({});
-  }
+  const response = {
+    totalCount,
+    statusCounts: counts.reduce((acc, curr) => {
+      acc[curr.status] = curr.count;
+      return acc;
+    }, {})
+  };
 
-  res.status(200).json({
-    totalCount: caseCount
-  });
+  res.status(200).json(response);
 });
-
