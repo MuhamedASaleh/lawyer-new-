@@ -1,5 +1,5 @@
 
-// // controllers/socketController.js
+// controllers/socketController.js
 // exports.handleSocketConnection = function (io) {
 //     io.on('connection', (socket) => {
 //         console.log('A user connected');
@@ -41,57 +41,12 @@
 //     });
 // };
 
-////////////////////
-
-// exports.handleSocketConnection = function (io) {
-//     io.on('connection', (socket) => {
-//         console.log('A user connected');
-
-//         // Notify others of the new user
-//         socket.broadcast.emit('new-user', { userId: socket.id });
-
-//         // Handle incoming offer
-//         socket.on('offer', (data) => {
-//             // Notify the target user of the incoming call
-//             socket.to(data.target).emit('incomingCall', {
-//                 sdp: data.sdp,
-//                 caller: socket.id,
-//                 video: data.video // Include video flag
-//             });
-//         });
-
-//         // Handle incoming answer
-//         socket.on('answer', (data) => {
-//             socket.to(data.target).emit('answer', {
-//                 sdp: data.sdp,
-//                 callee: socket.id,
-//             });
-//         });
-
-//         // Handle incoming ICE candidate
-//         socket.on('candidate', (data) => {
-//             socket.to(data.target).emit('candidate', { candidate: data.candidate });
-//         });
-
-//         // Handle end call
-//         socket.on('endCall', (data) => {
-//             // Notify the other user that the call has ended
-//             socket.to(data.target).emit('endCallNotification');
-//         });
-
-//         // Handle user disconnection
-//         socket.on('disconnect', () => {
-//             console.log('A user disconnected');
-//         });
-//     });
-// };
-
-// work?
-//////////////////////////////////////
+//////////////////
 
 exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected');
+
         // Notify others of the new user
         socket.broadcast.emit('new-user', { userId: socket.id });
 
@@ -101,7 +56,7 @@ exports.handleSocketConnection = function (io) {
             socket.to(data.target).emit('incomingCall', {
                 sdp: data.sdp,
                 caller: socket.id,
-                isVideoCall: data.isVideoCall
+                video: data.video // Include video flag
             });
         });
 
@@ -109,32 +64,24 @@ exports.handleSocketConnection = function (io) {
         socket.on('answer', (data) => {
             socket.to(data.target).emit('answer', {
                 sdp: data.sdp,
-                caller: socket.id
+                callee: socket.id,
             });
         });
 
-        // Handle incoming candidate
+        // Handle incoming ICE candidate
         socket.on('candidate', (data) => {
-            socket.to(data.target).emit('candidate', {
-                candidate: data.candidate,
-                caller: socket.id
-            });
+            socket.to(data.target).emit('candidate', { candidate: data.candidate });
         });
 
-        // Handle call rejection
-        socket.on('rejectCall', (data) => {
-            socket.to(data.target).emit('rejectCall', { caller: socket.id });
-        });
-
-        // Handle call end
+        // Handle end call
         socket.on('endCall', (data) => {
-            socket.to(data.target).emit('endCallNotification', { caller: socket.id });
+            // Notify the other user that the call has ended
+            socket.to(data.target).emit('endCallNotification');
         });
 
+        // Handle user disconnection
         socket.on('disconnect', () => {
             console.log('A user disconnected');
-            // Notify others of the user's disconnection
-            socket.broadcast.emit('user-disconnected', { userId: socket.id });
         });
     });
 };
