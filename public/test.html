@@ -142,6 +142,8 @@
 </body>
 </html> -->
 <!-- /////////////////////////////////////////// -->
+ 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -149,8 +151,8 @@
 </head>
 <body>
   <h1>Audio and Video Call</h1>
-  <video id="localVideo" autoplay playsinline style="display:none;"></video>
-  <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
+  <video id="localVideo" autoplay playsinline style="width: 30%;"></video>
+  <video id="remoteVideo" autoplay playsinline style="width: 30%;"></video>
 
   <button id="startAudioCall">Start Audio Call</button>
   <button id="startVideoCall">Start Video Call</button>
@@ -194,8 +196,8 @@
 
       peerConnection.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
-          remoteVideo.style.display = audioOnly ? 'none' : 'block';
           remoteVideo.srcObject = event.streams[0];
+          remoteVideo.style.display = 'block';
         }
       };
 
@@ -208,7 +210,10 @@
     startVideoCall.addEventListener('click', () => startCall(false));
 
     endCall.addEventListener('click', () => {
-      peerConnection.close();
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
       socket.emit('endCall');
       remoteVideo.style.display = 'none';
       localVideo.style.display = 'none';
@@ -254,7 +259,10 @@
     });
 
     socket.on('endCall', () => {
-      peerConnection.close();
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
       remoteVideo.style.display = 'none';
       localVideo.style.display = 'none';
       localVideo.srcObject = null;

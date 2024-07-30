@@ -29,7 +29,7 @@
 exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected');
-        
+
         socket.on('offer', (data) => {
             socket.to(data.target).emit('offer', {
                 sdp: data.sdp,
