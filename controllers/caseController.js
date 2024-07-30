@@ -457,20 +457,49 @@ exports.countCases = asyncHandler(async (req, res) => {
   res.status(200).json(response);
 });
 
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const statuses = ['inspection', 'court', 'pleadings', 'completed', 'won', 'lost', 'pending', 'accepted', 'decline'];
+
+const getMonthNumber = (monthName) => monthNames.indexOf(monthName) + 1;
+const getDayNumber = (dayName) => dayNames.indexOf(dayName);
+
+
 exports.getCaseStatistics = asyncHandler(async (req, res) => {
-  const { year, month } = req.query;
+  const { year, month, day } = req.query;
 
   // Validate and parse the dates
   let start, end;
 
-  if (year && month) {
-    start = new Date(year, month - 1, 1);
-    end = new Date(year, month, 0, 23, 59, 59);
+  if (year && month && day) {
+    const monthNumber = getMonthNumber(month);
+    const dayNumber = getDayNumber(day);
+    if (monthNumber === 0 || dayNumber === -1) {
+      return res.status(400).json({ error: 'Invalid month or day name' });
+    }
+    start = new Date(year, monthNumber - 1, dayNumber + 1);
+    end = new Date(year, monthNumber - 1, dayNumber + 1, 23, 59, 59);
+  } else if (year && month) {
+    const monthNumber = getMonthNumber(month);
+    if (monthNumber === 0) {
+      return res.status(400).json({ error: 'Invalid month name' });
+    }
+    start = new Date(year, monthNumber - 1, 1);
+    end = new Date(year, monthNumber, 0, 23, 59, 59);
   } else if (year) {
     start = new Date(year, 0, 1);
     end = new Date(year, 11, 31, 23, 59, 59);
+  } else if (month) {
+    const currentYear = new Date().getFullYear();
+    const monthNumber = getMonthNumber(month);
+    if (monthNumber === 0) {
+      return res.status(400).json({ error: 'Invalid month name' });
+    }
+    start = new Date(currentYear, monthNumber - 1, 1);
+    end = new Date(currentYear, monthNumber, 0, 23, 59, 59);
   } else {
-    return res.status(400).json({ error: 'Year is required' });
+    start = new Date(0); // Earliest possible date
+    end = new Date(); // Current date
   }
 
   // Aggregate the cases
@@ -504,25 +533,66 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   cases.forEach(caseData => {
     const date = caseData.get('date');
     const year = caseData.get('year');
-    const month = caseData.get('month');
+    const month = monthNames[caseData.get('month') - 1];
     const day = caseData.get('day');
     const status = caseData.get('status');
     const count = caseData.get('count');
 
+    // Format daily statistics
     if (!statistics.daily[date]) {
       statistics.daily[date] = {};
     }
-    if (!statistics.monthly[`${year}-${month}`]) {
-      statistics.monthly[`${year}-${month}`] = {};
+    statistics.daily[date][status] = count;
+
+    // Format monthly statistics
+    const monthKey = `${month}-${year}`;
+    if (!statistics.monthly[monthKey]) {
+      statistics.monthly[monthKey] = {};
     }
+    statistics.monthly[monthKey][status] = count;
+
+    // Format yearly statistics
     if (!statistics.yearly[year]) {
       statistics.yearly[year] = {};
     }
-
-    statistics.daily[date][status] = count;
-    statistics.monthly[`${year}-${month}`][status] = count;
     statistics.yearly[year][status] = count;
   });
 
-  res.status(200).json(statistics);
+  // Ensure all statuses are included in the response
+  const ensureStatuses = (stats) => {
+    Object.keys(stats).forEach(key => {
+      statuses.forEach(status => {
+        if (!stats[key][status]) {
+          stats[key][status] = 0;
+        }
+      });
+    });
+  };
+
+  ensureStatuses(statistics.daily);
+  ensureStatuses(statistics.monthly);
+  ensureStatuses(statistics.yearly);
+
+  // Ensure dates and months are shown correctly
+  const formattedDaily = {};
+  Object.keys(statistics.daily).forEach(date => {
+    const [year, month, day] = date.split('-');
+    const formattedDate = `${dayNames[new Date(date).getDay()]} ${monthNames[parseInt(month) - 1]} ${day}, ${year}`;
+    formattedDaily[formattedDate] = statistics.daily[date];
+  });
+
+  const formattedMonthly = {};
+  Object.keys(statistics.monthly).forEach(key => {
+    const [month, year] = key.split('-');
+    const formattedKey = `${month} ${year}`;
+    formattedMonthly[formattedKey] = statistics.monthly[key];
+  });
+
+  const formattedYearly = statistics.yearly;
+
+  res.status(200).json({
+    daily: formattedDaily,
+    monthly: formattedMonthly,
+    yearly: formattedYearly
+  });
 });
