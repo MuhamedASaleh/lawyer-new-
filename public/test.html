@@ -185,13 +185,20 @@
         });
     </script>
 </body>
-</html> -->
+</html> 
 
 
-<!--  -->
+
+ -->
 
 
-<!DOCTYPE html>
+
+ <!--  -->
+
+
+
+
+ <!DOCTYPE html>
 <html>
 <head>
     <title>Video Call with WebRTC and Socket.io</title>
@@ -353,7 +360,7 @@
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
-                socket.emit('endCall');
+                socket.emit('endCall', { target: remoteUserId });
                 startCallButton.style.display = 'block';
                 endCallButton.style.display = 'none';
             }
@@ -381,3 +388,4 @@
     </script>
 </body>
 </html>
+
