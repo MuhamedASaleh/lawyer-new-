@@ -273,6 +273,7 @@
         let peerConnection;
         let remoteUserId;
         let isVideoCall = false;
+        let isCallActive = false;
 
         const configuration = {
             iceServers: [
@@ -327,6 +328,7 @@
                 startVideoCallButton.style.display = 'none';
                 endCallButton.style.display = 'block';
                 isVideoCall = video;
+                isCallActive = true;
             } catch (error) {
                 console.error('Error starting call:', error);
             }
@@ -336,6 +338,10 @@
         startVideoCallButton.onclick = () => startCall(true);
 
         socket.on('incomingCall', async data => {
+            if (isCallActive) {
+                return; // Ignore incoming call if a call is already active
+            }
+
             // Set the remote user ID
             remoteUserId = data.caller;
 
@@ -394,6 +400,7 @@
                     startVoiceCallButton.style.display = 'none';
                     startVideoCallButton.style.display = 'none';
                     endCallButton.style.display = 'block';
+                    isCallActive = true;
                 } catch (error) {
                     console.error('Error accepting call:', error);
                 }
@@ -402,6 +409,7 @@
             // Handle call rejection
             rejectCallButton.onclick = () => {
                 callNotification.style.display = 'none';
+                socket.emit('rejectCall', { target: remoteUserId });
             };
         });
 
@@ -436,6 +444,7 @@
                 endCallButton.style.display = 'none';
                 localVideo.style.display = 'none';
                 remoteVideo.style.display = 'none';
+                isCallActive = false;
             }
         };
 
@@ -450,6 +459,7 @@
             endCallButton.style.display = 'none';
             localVideo.style.display = 'none';
             remoteVideo.style.display = 'none';
+            isCallActive = false;
         });
 
         // Emit a signal to notify when a new user connects
