@@ -145,14 +145,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Socket.io Video Call</title>
+  <title>Socket.io Audio and Video Call</title>
 </head>
 <body>
-  <h1>Video Call</h1>
-  <video id="localVideo" autoplay playsinline></video>
-  <video id="remoteVideo" autoplay playsinline></video>
+  <h1>Audio and Video Call</h1>
+  <video id="localVideo" autoplay playsinline style="display:none;"></video>
+  <video id="remoteVideo" autoplay playsinline style="display:none;"></video>
 
-  <button id="startCall">Start Call</button>
+  <button id="startAudioCall">Start Audio Call</button>
+  <button id="startVideoCall">Start Video Call</button>
   <button id="endCall">End Call</button>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -160,7 +161,8 @@
     const socket = io();
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
-    const startCall = document.getElementById('startCall');
+    const startAudioCall = document.getElementById('startAudioCall');
+    const startVideoCall = document.getElementById('startVideoCall');
     const endCall = document.getElementById('endCall');
 
     let localStream;
@@ -171,9 +173,15 @@
       ]
     };
 
-    startCall.addEventListener('click', async () => {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
+    async function startCall(audioOnly) {
+      if (audioOnly) {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localVideo.style.display = 'none';
+      } else {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.style.display = 'block';
+        localVideo.srcObject = localStream;
+      }
 
       peerConnection = new RTCPeerConnection(configuration);
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -186,6 +194,7 @@
 
       peerConnection.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
+          remoteVideo.style.display = audioOnly ? 'none' : 'block';
           remoteVideo.srcObject = event.streams[0];
         }
       };
@@ -193,13 +202,18 @@
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
       socket.emit('offer', { sdp: peerConnection.localDescription });
-    });
+    }
+
+    startAudioCall.addEventListener('click', () => startCall(true));
+    startVideoCall.addEventListener('click', () => startCall(false));
 
     endCall.addEventListener('click', () => {
       peerConnection.close();
       socket.emit('endCall');
-      remoteVideo.srcObject = null;
+      remoteVideo.style.display = 'none';
+      localVideo.style.display = 'none';
       localVideo.srcObject = null;
+      remoteVideo.srcObject = null;
     });
 
     socket.on('offer', async ({ sdp }) => {
@@ -216,6 +230,7 @@
         peerConnection.ontrack = (event) => {
           if (event.streams && event.streams[0]) {
             remoteVideo.srcObject = event.streams[0];
+            remoteVideo.style.display = 'block';
           }
         };
       }
@@ -240,8 +255,10 @@
 
     socket.on('endCall', () => {
       peerConnection.close();
-      remoteVideo.srcObject = null;
+      remoteVideo.style.display = 'none';
+      localVideo.style.display = 'none';
       localVideo.srcObject = null;
+      remoteVideo.srcObject = null;
     });
   </script>
 </body>
