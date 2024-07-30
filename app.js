@@ -1,131 +1,89 @@
 const express = require('express');
-const http = require('http'); // Add this
-const socketIo = require('socket.io'); // Add this
+const http = require('http');
+const socketIo = require('socket.io');
 const path = require('path');
-
-const app = express();
-require("dotenv").config({ path: ".env" });
+const dotenv = require('dotenv');
 const sequelize = require('./config/dbConfig');
-const cors = require("cors");
-var bodyParser = require("body-parser");
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const newsRoutes = require('./routes/newsRoutes');
-const caseRoutes = require('./routes/caseRoutes')
-
+const caseRoutes = require('./routes/caseRoutes');
 const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
-// const adminRoutes =require('./routes/admin/adminRoutes')
+const adminRoutes = require('./routes/admin/adminRoutes');
+const reviewRoutes = require('./routes/reviewRoute');
+const errorMiddleWare = require('./middleware/errorMiddleWare');
 
-const adminRoutes = require('./routes/admin/adminRoutes')
-const reviewRoutes = require('./routes/reviewRoute')
+dotenv.config({ path: '.env' });
 
-
-app.use(express.static(path.join(__dirname, 'public/images')));
-let port = process.env.PORT || 5050;
-
-
-// Create an HTTP server
+const app = express();
 const server = http.createServer(app);
-
-// Integrate Socket.io with the server
 const io = socketIo(server);
 
-app.get('/', async (req, res) => {
-  res.send('home')
-});
+const port = process.env.PORT || 5050;
 
-//db connection
-sequelize.sync({ force: false })
-  .then(() => {
-    console.log('Database synced');
-    app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
-    });
-  })
-  .catch(err => {
-    console.error('Error syncing database:', err);
-  });
-
-app.use(
-  cors({
-    origin: "*",
-  })
-);
-
-
-
-//body parse
+app.use(cors({ origin: '*' }));
+app.use(express.static(path.join(__dirname, 'public/images')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// Middleware
-app.use(express.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
-// Use the news routes
 app.use('/api', newsRoutes);
-// Use the questionAnswers routes
 app.use('/api/questionAnswer', questionAnswerRoutes);
-
-// Use the admin routes
 app.use('/api', adminRoutes);
 app.use('/api', reviewRoutes);
-// Use the case routes
 app.use('/api/cases', caseRoutes);
 
-
-const errorMiddleWare = require('./middleware/errorMiddleWare')
 app.use(errorMiddleWare);
 
+// Serve the index.html file at /test endpoint
+app.get('/test', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test.html'));
+});
 
+// Socket.io logic
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
- 
+  // Notify others of the new user
+  socket.broadcast.emit('new-user', { userId: socket.id });
 
-// const express = require('express');
-// const http = require('http');
-// const path = require('path');
-// const socketIo = require('socket.io');
+  socket.on('offer', (data) => {
+    socket.to(data.target).emit('offer', {
+      sdp: data.sdp,
+      caller: socket.id,
+    });
+  });
 
-// const app = express();
-// const server = http.createServer(app);
-// const io = socketIo(server);
+  socket.on('answer', (data) => {
+    socket.to(data.target).emit('answer', {
+      sdp: data.sdp,
+      callee: socket.id,
+    });
+  });
 
-// // Serve the index.html file at /test endpoint
-// app.get('/test', (req, res) => {
-//   res.sendFile(path.join(__dirname,'public', 'test.html'));
-// });
+  socket.on('candidate', (data) => {
+    socket.to(data.target).emit('candidate', { candidate: data.candidate });
+  });
 
-// io.on('connection', (socket) => {
-//     console.log('A user connected');
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
 
-//     // Notify others of the new user
-//     socket.broadcast.emit('new-user', { userId: socket.id });
-
-//     socket.on('offer', (data) => {
-//         socket.to(data.target).emit('offer', {
-//             sdp: data.sdp,
-//             caller: socket.id,
-//         });
-//     });
-
-//     socket.on('answer', (data) => {
-//         socket.to(data.target).emit('answer', {
-//             sdp: data.sdp,
-//             callee: socket.id,
-//         });
-//     });
-
-//     socket.on('candidate', (data) => {
-//         socket.to(data.target).emit('candidate', { candidate: data.candidate });
-//     });
-
-//     socket.on('disconnect', () => {
-//         console.log('A user disconnected');
-//     });
-// });
-
-// server.listen(5050, () => {
-//     console.log('Server is listening on port 5050');
-// });
+// Sync database and start server
+sequelize.sync({ force: false })
+  .then(() => {
+    console.log('Database synced');
+    server.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Error syncing database:', err);
+  });
