@@ -207,8 +207,8 @@
      <button id="startVideoCall">Start Video Call</button>
      <button id="endCall" style="display:none;">End Call</button>
      <audio id="remoteAudio" autoplay></audio>
-     <video id="localVideo" autoplay muted></video>
-     <video id="remoteVideo" autoplay></video>
+     <video id="localVideo" autoplay muted style="width: 300px; height: 300px; display:none;"></video>
+     <video id="remoteVideo" autoplay style="width: 300px; height: 300px; display:none;"></video>
      <div id="callNotification" style="display:none;">
          <p>Incoming call from <span id="callerName"></span></p>
          <button id="acceptCall">Accept</button>
@@ -251,7 +251,7 @@
                      localVideo.srcObject = localStream;
                      localVideo.style.display = 'block';
                  } else {
-                     remoteAudio.srcObject = localStream;
+                     localVideo.style.display = 'none';
                  }
  
                  peerConnection = new RTCPeerConnection(configuration);
@@ -337,7 +337,7 @@
                          localVideo.srcObject = localStream;
                          localVideo.style.display = 'block';
                      } else {
-                         remoteAudio.srcObject = localStream;
+                         localVideo.style.display = 'none';
                      }
  
                      localStream.getTracks().forEach(track => {
@@ -425,4 +425,3 @@
  </body>
  </html>
  
-
