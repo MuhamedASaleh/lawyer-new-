@@ -15,6 +15,9 @@
         <button id="acceptCall">Accept</button>
         <button id="rejectCall">Reject</button>
     </div>
+    <div id="endCallNotification" style="display:none;">
+        <p>The call has ended.</p>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
@@ -26,6 +29,7 @@
         const callerName = document.getElementById('callerName');
         const acceptCallButton = document.getElementById('acceptCall');
         const rejectCallButton = document.getElementById('rejectCall');
+        const endCallNotification = document.getElementById('endCallNotification');
 
         let localStream;
         let peerConnection;
@@ -160,6 +164,16 @@
             }
         };
 
+        // Listen for call end notifications
+        socket.on('endCallNotification', () => {
+            endCallNotification.style.display = 'block';
+            setTimeout(() => {
+                endCallNotification.style.display = 'none';
+            }, 3000); // Hide notification after 3 seconds
+            startCallButton.style.display = 'block';
+            endCallButton.style.display = 'none';
+        });
+
         // Emit a signal to notify when a new user connects
         socket.emit('new-user', { userId: socket.id });
 
@@ -169,32 +183,25 @@
                 remoteUserId = data.userId;
             }
         });
-
-        socket.on('endCallNotification', () => {
-            alert('The call has ended');
-            endCallButton.style.display = 'none';
-            startCallButton.style.display = 'block';
-        });
     </script>
 </body>
 </html> -->
 
 
-
 <!--  -->
-
 
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Voice Call with WebRTC and Socket.io</title>
+    <title>Video Call with WebRTC and Socket.io</title>
 </head>
 <body>
-    <h1>Voice Call</h1>
+    <h1>Video Call</h1>
     <button id="startCall">Start Call</button>
     <button id="endCall" style="display:none;">End Call</button>
-    <audio id="remoteAudio" autoplay></audio>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
     <div id="callNotification" style="display:none;">
         <p>Incoming call from <span id="callerName"></span></p>
         <button id="acceptCall">Accept</button>
@@ -209,7 +216,8 @@
 
         const startCallButton = document.getElementById('startCall');
         const endCallButton = document.getElementById('endCall');
-        const remoteAudio = document.getElementById('remoteAudio');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
         const callNotification = document.getElementById('callNotification');
         const callerName = document.getElementById('callerName');
         const acceptCallButton = document.getElementById('acceptCall');
@@ -228,7 +236,8 @@
 
         startCallButton.onclick = async () => {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
 
                 peerConnection = new RTCPeerConnection(configuration);
 
@@ -246,7 +255,7 @@
                 };
 
                 peerConnection.ontrack = event => {
-                    remoteAudio.srcObject = event.streams[0];
+                    remoteVideo.srcObject = event.streams[0];
                 };
 
                 const offer = await peerConnection.createOffer();
@@ -290,10 +299,11 @@
                     };
 
                     peerConnection.ontrack = event => {
-                        remoteAudio.srcObject = event.streams[0];
+                        remoteVideo.srcObject = event.streams[0];
                     };
 
-                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    localVideo.srcObject = localStream;
                     localStream.getTracks().forEach(track => {
                         peerConnection.addTrack(track, localStream);
                     });
