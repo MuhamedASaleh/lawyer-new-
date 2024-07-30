@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Voice Call with WebRTC and Socket.io</title>
@@ -141,15 +141,11 @@
     </script>
 </body>
 </html>
-
+ -->
 
 
 
 <!--  -->
-
-
-
-<!-- 
 <!DOCTYPE html>
 <html>
 <head>
@@ -158,8 +154,13 @@
 <body>
     <h1>Voice Call</h1>
     <button id="startCall">Start Call</button>
-    <button id="endCall">End Call</button>
+    <button id="endCall" style="display:none;">End Call</button>
     <audio id="remoteAudio" autoplay></audio>
+    <div id="callNotification" style="display:none;">
+        <p>Incoming call from <span id="callerName"></span></p>
+        <button id="acceptCall">Accept</button>
+        <button id="rejectCall">Reject</button>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
@@ -167,6 +168,10 @@
         const startCallButton = document.getElementById('startCall');
         const endCallButton = document.getElementById('endCall');
         const remoteAudio = document.getElementById('remoteAudio');
+        const callNotification = document.getElementById('callNotification');
+        const callerName = document.getElementById('callerName');
+        const acceptCallButton = document.getElementById('acceptCall');
+        const rejectCallButton = document.getElementById('rejectCall');
 
         let localStream;
         let peerConnection;
@@ -208,53 +213,70 @@
                     sdp: peerConnection.localDescription,
                     target: remoteUserId
                 });
+
+                // Show end call button and hide start call button
+                startCallButton.style.display = 'none';
+                endCallButton.style.display = 'block';
             } catch (error) {
                 console.error('Error starting call:', error);
             }
         };
 
-        socket.on('offer', async data => {
+        socket.on('incomingCall', async data => {
+            // Set the remote user ID
             remoteUserId = data.caller;
 
-            if (!peerConnection) {
-                peerConnection = new RTCPeerConnection(configuration);
+            // Show call notification
+            callNotification.style.display = 'block';
+            callerName.textContent = remoteUserId;
 
-                peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.emit('candidate', {
-                            candidate: event.candidate.toJSON(),
-                            target: data.caller
-                        });
-                    }
-                };
-
-                peerConnection.ontrack = event => {
-                    remoteAudio.srcObject = event.streams[0];
-                };
+            // Handle call acceptance
+            acceptCallButton.onclick = async () => {
+                callNotification.style.display = 'none';
 
                 try {
+                    peerConnection = new RTCPeerConnection(configuration);
+
+                    peerConnection.onicecandidate = event => {
+                        if (event.candidate) {
+                            socket.emit('candidate', {
+                                candidate: event.candidate.toJSON(),
+                                target: remoteUserId
+                            });
+                        }
+                    };
+
+                    peerConnection.ontrack = event => {
+                        remoteAudio.srcObject = event.streams[0];
+                    };
+
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     localStream.getTracks().forEach(track => {
                         peerConnection.addTrack(track, localStream);
                     });
+
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+
+                    socket.emit('answer', {
+                        sdp: peerConnection.localDescription,
+                        target: remoteUserId
+                    });
+
+                    // Show end call button and hide start call button
+                    startCallButton.style.display = 'none';
+                    endCallButton.style.display = 'block';
                 } catch (error) {
-                    console.error('Error accessing local media:', error);
+                    console.error('Error accepting call:', error);
                 }
-            }
+            };
 
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                socket.emit('answer', {
-                    sdp: peerConnection.localDescription,
-                    target: data.caller
-                });
-            } catch (error) {
-                console.error('Error handling offer:', error);
-            }
+            // Handle call rejection
+            rejectCallButton.onclick = () => {
+                callNotification.style.display = 'none';
+            };
         });
 
         socket.on('answer', async data => {
@@ -274,19 +296,13 @@
             }
         });
 
-        socket.on('callNotification', data => {
-            alert(`Incoming call from user ${data.caller}`);
-        });
-
-        socket.on('endCallNotification', () => {
-            alert('The call has ended');
-        });
-
         endCallButton.onclick = () => {
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
                 socket.emit('endCall');
+                startCallButton.style.display = 'block';
+                endCallButton.style.display = 'none';
             }
         };
 
@@ -299,6 +315,12 @@
                 remoteUserId = data.userId;
             }
         });
+
+        socket.on('endCallNotification', () => {
+            alert('The call has ended');
+            endCallButton.style.display = 'none';
+            startCallButton.style.display = 'block';
+        });
     </script>
 </body>
-</html> -->
+</html>
