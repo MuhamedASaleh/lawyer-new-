@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Voice Call with WebRTC and Socket.io</title>
@@ -139,5 +139,110 @@
             }
         });
     </script>
+</body>
+</html> -->
+<!-- /////////////////////////////////////////// -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.io Video Call</title>
+</head>
+<body>
+  <h1>Video Call</h1>
+  <video id="localVideo" autoplay playsinline></video>
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <button id="startCall">Start Call</button>
+  <button id="endCall">End Call</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const startCall = document.getElementById('startCall');
+    const endCall = document.getElementById('endCall');
+
+    let localStream;
+    let peerConnection;
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    };
+
+    startCall.addEventListener('click', async () => {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+
+      peerConnection = new RTCPeerConnection(configuration);
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+      peerConnection.onicecandidate = ({ candidate }) => {
+        if (candidate) {
+          socket.emit('candidate', { candidate });
+        }
+      };
+
+      peerConnection.ontrack = (event) => {
+        if (event.streams && event.streams[0]) {
+          remoteVideo.srcObject = event.streams[0];
+        }
+      };
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.emit('offer', { sdp: peerConnection.localDescription });
+    });
+
+    endCall.addEventListener('click', () => {
+      peerConnection.close();
+      socket.emit('endCall');
+      remoteVideo.srcObject = null;
+      localVideo.srcObject = null;
+    });
+
+    socket.on('offer', async ({ sdp }) => {
+      if (!peerConnection) {
+        peerConnection = new RTCPeerConnection(configuration);
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+        peerConnection.onicecandidate = ({ candidate }) => {
+          if (candidate) {
+            socket.emit('candidate', { candidate });
+          }
+        };
+
+        peerConnection.ontrack = (event) => {
+          if (event.streams && event.streams[0]) {
+            remoteVideo.srcObject = event.streams[0];
+          }
+        };
+      }
+
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.emit('answer', { sdp: peerConnection.localDescription });
+    });
+
+    socket.on('answer', async ({ sdp }) => {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+    });
+
+    socket.on('candidate', async ({ candidate }) => {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (error) {
+        console.error('Error adding received ICE candidate', error);
+      }
+    });
+
+    socket.on('endCall', () => {
+      peerConnection.close();
+      remoteVideo.srcObject = null;
+      localVideo.srcObject = null;
+    });
+  </script>
 </body>
 </html>
