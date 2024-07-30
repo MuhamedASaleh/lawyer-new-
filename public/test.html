@@ -283,7 +283,8 @@
  
                  socket.emit('offer', {
                      sdp: peerConnection.localDescription,
-                     target: remoteUserId
+                     target: remoteUserId,
+                     video: video
                  });
  
                  // Show end call button and hide start call buttons
@@ -302,6 +303,7 @@
          socket.on('incomingCall', async data => {
              // Set the remote user ID
              remoteUserId = data.caller;
+             isVideoCall = data.video;
  
              // Show call notification
              callNotification.style.display = 'block';
