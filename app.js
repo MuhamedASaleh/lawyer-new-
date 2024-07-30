@@ -46,35 +46,8 @@ app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
-// Socket.io logic
-io.on('connection', (socket) => {
-  console.log('A user connected');
-
-  // Notify others of the new user
-  socket.broadcast.emit('new-user', { userId: socket.id });
-
-  socket.on('offer', (data) => {
-    socket.to(data.target).emit('offer', {
-      sdp: data.sdp,
-      caller: socket.id,
-    });
-  });
-
-  socket.on('answer', (data) => {
-    socket.to(data.target).emit('answer', {
-      sdp: data.sdp,
-      callee: socket.id,
-    });
-  });
-
-  socket.on('candidate', (data) => {
-    socket.to(data.target).emit('candidate', { candidate: data.candidate });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
-  });
-});
+const socketRoute = require('./routes/socket')(io)
+app.use('/api', socketRoute);
 
 // Sync database and start server
 sequelize.sync({ force: false })
