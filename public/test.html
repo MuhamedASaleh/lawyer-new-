@@ -1,4 +1,4 @@
-
+<!-- 
  <!DOCTYPE html>
  <html>
  <head>
@@ -102,7 +102,6 @@
  
          startVoiceCallButton.onclick = () => startCall(false);
          startVideoCallButton.onclick = () => startCall(true);
- 
          socket.on('incomingCall', async data => {
              // Set the remote user ID
              remoteUserId = data.caller;
@@ -229,4 +228,192 @@
      </script>
  </body>
  </html>
-  
+   -->
+<!--  -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.io Video Call Test</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #userList {
+            list-style: none;
+            padding: 0;
+        }
+        #userList li {
+            padding: 5px;
+            display: flex;
+            align-items: center;
+        }
+        #userList li:hover {
+            background-color: #eee;
+        }
+        #room {
+            display: none;
+        }
+        .call-button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .call-button:hover {
+            background-color: #0056b3;
+        }
+        audio {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.io Video Call Test</h1>
+    <div>
+        <h2>Online Users</h2>
+        <ul id="userList"></ul>
+    </div>
+    <div id="room">
+        <h2>Room</h2>
+        <p id="roomId"></p>
+        <div id="roomUsers"></div>
+        <audio id="localAudio" autoplay></audio>
+        <audio id="remoteAudio" autoplay></audio>
+    </div>
+
+    <script>
+        const userId = prompt("Enter your user ID");
+        const socket = io('/');
+        let localStream;
+        let remoteStream;
+        let peerConnection;
+        const peerConnectionConfig = {
+            'iceServers': [
+                { 'urls': 'stun:stun.stunprotocol.org:3478' },
+                { 'urls': 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        // Add the user to the online users list
+        socket.emit('add-user', userId);
+
+        // Listen for updates to the online users list
+        socket.on('update-online-users', (data) => {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            data.onlineUsers.forEach(user => {
+                if (user.userId !== userId) { // Don't list the current user
+                    const listItem = document.createElement('li');
+                    listItem.textContent = user.userId;
+
+                    const callButton = document.createElement('button');
+                    callButton.textContent = 'Voice Call';
+                    callButton.className = 'call-button';
+                    callButton.addEventListener('click', () => initiateCall(user.userId));
+
+                    listItem.appendChild(callButton);
+                    userList.appendChild(listItem);
+                }
+            });
+        });
+
+        // When the user clicks the call button
+        function initiateCall(calleeId) {
+            const roomId = `room-${userId}-${calleeId}`; // Generate a unique room ID
+            socket.emit('join-private-room', { roomId, callerId: userId, calleeId });
+        }
+
+        // Listen for instructions to join a room
+        socket.on('join-room', async (data) => {
+            console.log('Joining room:', data.roomId);
+            document.getElementById('room').style.display = 'block';
+            document.getElementById('roomId').textContent = `Room ID: ${data.roomId}`;
+            document.getElementById('roomUsers').textContent = `Users in room: ${userId}`;
+
+            await startLocalStream();
+            setupPeerConnection();
+
+            if (data.callerId !== userId) {
+                createOffer();
+            }
+        });
+
+        // Listen for new user notifications in the room
+        socket.on('new-user', (data) => {
+            console.log('New user in room:', data);
+            document.getElementById('roomUsers').textContent = `Users in room: ${data.callerId} and ${data.calleeId}`;
+        });
+
+        // Listen for user disconnection notifications
+        socket.on('user-disconnected', (data) => {
+            console.log('User disconnected:', data);
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+        });
+
+        // WebRTC functions
+        async function startLocalStream() {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            document.getElementById('localAudio').srcObject = localStream;
+        }
+
+        function setupPeerConnection() {
+            peerConnection = new RTCPeerConnection(peerConnectionConfig);
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { candidate: event.candidate });
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                remoteStream = new MediaStream();
+                document.getElementById('remoteAudio').srcObject = remoteStream;
+                remoteStream.addTrack(event.track);
+            };
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+        }
+
+        function createOffer() {
+            peerConnection.createOffer()
+                .then(offer => {
+                    return peerConnection.setLocalDescription(offer);
+                })
+                .then(() => {
+                    socket.emit('offer', { offer: peerConnection.localDescription });
+                });
+        }
+
+        socket.on('offer', (data) => {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
+                .then(() => {
+                    return peerConnection.createAnswer();
+                })
+                .then(answer => {
+                    return peerConnection.setLocalDescription(answer);
+                })
+                .then(() => {
+                    socket.emit('answer', { answer: peerConnection.localDescription });
+                });
+        });
+
+        socket.on('answer', (data) => {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        });
+
+        socket.on('ice-candidate', (data) => {
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        });
+    </script>
+</body>
+</html>
