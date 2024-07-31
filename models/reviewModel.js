@@ -8,14 +8,10 @@ const Review = sequelize.define('Review', {
         autoIncrement: true,
         primaryKey: true
     },
-    // userID: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: false,
-    //     references: {
-    //         model: 'users', // Name of the User table
-    //         key: 'userID'
-    //     }
-    // },
+    userID: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     rating: {
         type: DataTypes.INTEGER,
         allowNull: false,
