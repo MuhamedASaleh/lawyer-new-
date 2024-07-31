@@ -458,7 +458,6 @@ const statuses = ['inspection', 'court', 'pleadings', 'completed', 'won', 'lost'
 const getMonthNumber = (monthName) => monthNames.indexOf(monthName) + 1;
 const getDayNumber = (dayName) => dayNames.indexOf(dayName);
 
-
 exports.getCaseStatistics = asyncHandler(async (req, res) => {
   const { year, month, day } = req.query;
 
@@ -566,12 +565,17 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   ensureStatuses(statistics.monthly);
   ensureStatuses(statistics.yearly);
 
-  // Format the response as arrays of objects with 'time' key
+  // Format the response as arrays of objects with 'time' key, excluding zero counts
   const formatStatistics = (stats) => {
-    return Object.keys(stats).map(key => ({
-      time: key,
-      ...stats[key]
-    }));
+    return Object.keys(stats).map(key => {
+      const result = { time: key };
+      Object.keys(stats[key]).forEach(status => {
+        if (stats[key][status] > 0) {
+          result[status] = stats[key][status];
+        }
+      });
+      return result;
+    });
   };
 
   const formattedDaily = formatStatistics(statistics.daily);
