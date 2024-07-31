@@ -131,7 +131,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) => {
     totalPages: Math.ceil(count / limitNumber),
     currentPage: pageNumber,
     limit: limitNumber,
-    data: rows.length > 0 ? rows : {}
+    data: rows.length > 0 ? rows : []
   });
 });
 
