@@ -87,15 +87,12 @@ exports.updateCustomerFiles = async (req, res) => {
 };
 
 
-exports.filterCurrentCase = asyncHandler(async (req, res) =>{ 
-
+exports.filterCurrentCase = asyncHandler(async (req, res) => { 
   const { status, page = 1, limit = 10 } = req.query;
   console.log(req.user.id);
 
-
-  
   let whereCondition = {};
-  
+
   if (status) {
     // If status is provided, filter by that status
     whereCondition.status = status;
@@ -103,7 +100,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) =>{
   } else {
     // If status is not provided or is empty, return all cases with specific statuses
     whereCondition.status = {
-      [Op.in]: ['accepted','inspection', 'court', 'pleadings','completed']
+      [Op.in]: ['accepted', 'inspection', 'court', 'pleadings', 'completed']
     };
     console.log(whereCondition);
     console.log(req.user);
@@ -129,18 +126,15 @@ exports.filterCurrentCase = asyncHandler(async (req, res) =>{
     offset
   });
 
-  if (!rows || rows.length === 0) {
-    return res.status(404).json({ state: 'failed', message: 'nothing to show, Case for current user is empty' });
-  }
-
   res.status(200).json({
     total: count,
     totalPages: Math.ceil(count / limitNumber),
     currentPage: pageNumber,
     limit: limitNumber,
-    data: rows
+    data: rows.length > 0 ? rows : {}
   });
 });
+
 
 // Filtering and pagination for current cases (inspection, court, pleadings, completed) for admin
 exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
