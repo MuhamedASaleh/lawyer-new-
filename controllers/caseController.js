@@ -581,7 +581,7 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   const formattedDaily = formatStatistics(statistics.daily);
   const formattedMonthly = formatStatistics(statistics.monthly);
   const formattedYearly = formatStatistics(statistics.yearly);
-
+console.log(formattedMonthly);
   res.status(200).json({
     daily: formattedDaily,
     monthly: formattedMonthly,

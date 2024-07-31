@@ -18,7 +18,12 @@ const QuestionAnswer = sequelize.define('QuestionAnswer', {
     userID: {
         type: DataTypes.INTEGER,
         allowNull: true
-    }
+    }, 
+    status: {
+        type: DataTypes.ENUM('pending', 'accept', 'reject'),
+        allowNull: true,
+        defaultValue: 'pending'
+      }
 }, {
     tableName: 'question_answers',
 });
