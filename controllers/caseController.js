@@ -103,7 +103,7 @@ exports.filterCurrentCase = asyncHandler(async (req, res) =>{
   } else {
     // If status is not provided or is empty, return all cases with specific statuses
     whereCondition.status = {
-      [Op.in]: ['inspection', 'court', 'pleadings', 'completed']
+      [Op.in]: ['accepted','inspection', 'court', 'pleadings']
     };
     console.log(whereCondition);
     console.log(req.user);
