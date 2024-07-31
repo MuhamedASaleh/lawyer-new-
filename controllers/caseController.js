@@ -465,16 +465,17 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   // Validate and parse the dates
   let start, end;
 
+  const currentYear = new Date().getFullYear();
+  const monthNumber = month ? getMonthNumber(month) : 0;
+  const dayNumber = day ? getDayNumber(day) : -1;
+
   if (year && month && day) {
-    const monthNumber = getMonthNumber(month);
-    const dayNumber = getDayNumber(day);
     if (monthNumber === 0 || dayNumber === -1) {
       return res.status(400).json({ error: 'Invalid month or day name' });
     }
     start = new Date(year, monthNumber - 1, dayNumber + 1);
     end = new Date(year, monthNumber - 1, dayNumber + 1, 23, 59, 59);
   } else if (year && month) {
-    const monthNumber = getMonthNumber(month);
     if (monthNumber === 0) {
       return res.status(400).json({ error: 'Invalid month name' });
     }
@@ -484,8 +485,6 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
     start = new Date(year, 0, 1);
     end = new Date(year, 11, 31, 23, 59, 59);
   } else if (month) {
-    const currentYear = new Date().getFullYear();
-    const monthNumber = getMonthNumber(month);
     if (monthNumber === 0) {
       return res.status(400).json({ error: 'Invalid month name' });
     }
@@ -567,22 +566,17 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   ensureStatuses(statistics.monthly);
   ensureStatuses(statistics.yearly);
 
-  // Ensure dates and months are shown correctly
-  const formattedDaily = {};
-  Object.keys(statistics.daily).forEach(date => {
-    const [year, month, day] = date.split('-');
-    const formattedDate = `${dayNames[new Date(date).getDay()]} ${monthNames[parseInt(month) - 1]} ${day}, ${year}`;
-    formattedDaily[formattedDate] = statistics.daily[date];
-  });
+  // Format the response as arrays of objects with 'time' key
+  const formatStatistics = (stats) => {
+    return Object.keys(stats).map(key => ({
+      time: key,
+      ...stats[key]
+    }));
+  };
 
-  const formattedMonthly = {};
-  Object.keys(statistics.monthly).forEach(key => {
-    const [month, year] = key.split('-');
-    const formattedKey = `${month} ${year}`;
-    formattedMonthly[formattedKey] = statistics.monthly[key];
-  });
-
-  const formattedYearly = statistics.yearly;
+  const formattedDaily = formatStatistics(statistics.daily);
+  const formattedMonthly = formatStatistics(statistics.monthly);
+  const formattedYearly = formatStatistics(statistics.yearly);
 
   res.status(200).json({
     daily: formattedDaily,
