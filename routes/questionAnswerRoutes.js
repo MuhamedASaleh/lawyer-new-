@@ -2,30 +2,35 @@ const express = require('express');
 const router = express.Router();
 const {
     createQuestionAnswer,
-    getAllQuestionAnswers,
     getQuestionAnswer,
     updateQuestionAnswer,
     deleteQuestionAnswer,
+    getAcceptedQuestionAnswers,
+    getPendingQuestionAnswers,
+    updateStatus,
 } = require('../controllers/questionAnswerController');
-const {
-    validateCreateQuestionAnswer,
-    validateUpdateQuestionAnswer,
-} = require('../Validations/questionAnswerValidator');
-const { Auth } = require('../middleware/auth')
-// const validateRequest = require('../middleware/validateRequest');
-// Create a new question-answer
-router.post('/',Auth, createQuestionAnswer);
 
-// Get all question-answers
-router.get('/', getAllQuestionAnswers);
+const { Auth, AuthorizeRole } = require('../middleware/auth');
+
+// Create a new question-answer
+router.post('/', Auth, createQuestionAnswer);
+
+// Get all question-answers with 'accepted' status
+router.get('/accepted', Auth, getAcceptedQuestionAnswers);
+
+// Get all question-answers with 'pending' status
+router.get('/pending', Auth, getPendingQuestionAnswers);
 
 // Get a specific question-answer by ID
-router.get('/:id', getQuestionAnswer);
+router.get('/:id', Auth, getQuestionAnswer);
 
 // Update a question-answer
-router.put('/:id', updateQuestionAnswer);
+router.put('/:id', Auth, updateQuestionAnswer);
 
 // Delete a question-answer
-router.delete('/:id', deleteQuestionAnswer);
+router.delete('/:id', Auth, deleteQuestionAnswer);
+
+// Route for updating the status
+router.put('/:id/status', Auth, AuthorizeRole('admin'), updateStatus);
 
 module.exports = router;
