@@ -253,6 +253,11 @@ exports.getLawyersByStatusAccept = async (req, res) => {
         role: 'lawyer',
         status: 'accept'
       },
+      include: [{
+        model: Review,
+        as: 'Reviews',
+        attributes: ['rating']
+      }],
       limit: limitNumber,
       offset
     });
@@ -261,17 +266,31 @@ exports.getLawyersByStatusAccept = async (req, res) => {
       return res.status(404).json({ error: 'No lawyers with status "accept" found' });
     }
 
+    // Calculate the average rating for each lawyer
+    const lawyers = rows.map(lawyer => {
+      const totalRatings = lawyer.Reviews.reduce((sum, review) => sum + review.rating, 0);
+      const countReviews = lawyer.Reviews.length;
+      const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
+
+      return {
+        ...lawyer.toJSON(),
+        averageRating,
+      };
+    });
+
     res.json({
       total: count,
       totalPages: Math.ceil(count / limitNumber),
       currentPage: pageNumber,
       limit: limitNumber,
-      lawyers: rows
+      lawyers
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 // Function to get all lawyers with status 'pending'
 exports.getLawyersByStatusPending = async (req, res) => {
   try {

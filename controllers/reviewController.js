@@ -34,23 +34,46 @@ exports.createReview = asyncHandler(async (req, res, next) => {
 
 
 exports.getAllReview = asyncHandler(async (req, res, next) => {
-
     const { id } = req.params;
-    // Fetch all reviews
-    const reviews = await Review.findAll({ where: { userID: id } });
+    const { page = 1, limit = 10 } = req.query;
+
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Validate page and limit
+    if (isNaN(pageNumber) || pageNumber <= 0) {
+        return res.status(400).json({ error: 'Invalid page parameter' });
+    }
+
+    if (isNaN(limitNumber) || limitNumber <= 0) {
+        return res.status(400).json({ error: 'Invalid limit parameter' });
+    }
+
+    // Calculate offset
+    const offset = (pageNumber - 1) * limitNumber;
+
+    // Fetch reviews with pagination
+    const { rows: reviews, count: totalReviews } = await Review.findAndCountAll({
+        where: { userID: id },
+        limit: limitNumber,
+        offset,
+    });
 
     // Calculate the sum of ratings and the count of reviews
     const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
     const countReviews = reviews.length;
 
     // Calculate the average rating and round up
-    const averageRating = Math.ceil(totalRatings / countReviews);
+    const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
 
-    // Respond with the new review, the number of ratings, the average rating, and the latest review
+    // Respond with the reviews, the number of ratings, the average rating, and pagination info
     res.status(200).json({
         reviews,
-        numberOfRatings: countReviews,
-        ratingAverage: averageRating
-    });;
+        numberOfRatings: totalReviews,
+        ratingAverage: averageRating,
+        totalPages: Math.ceil(totalReviews / limitNumber),
+        currentPage: pageNumber,
+        limit: limitNumber
+    });
 });
-
