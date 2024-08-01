@@ -2,7 +2,7 @@
 const { Sequelize } = require('sequelize');
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
-const { Op } = require('sequelize');
+const { Op, fn, col, literal } = require('sequelize');
 const asyncHandler = require(`express-async-handler`);
 const {Review} = require('../Associations/associations');
 
@@ -449,3 +449,85 @@ exports.getLawyerCount = asyncHandler(async (req, res) => {
 
     res.status(200).json({ count: lawyerCount });
 });
+
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+exports.getLawyerCountsByMonth = async (req, res) => {
+  try {
+    const { year } = req.query;
+    if (!year) {
+      return res.status(400).json({ message: 'Year is required' });
+    }
+
+    const startOfYear = `${year}-01-01 00:00:00`;
+    const endOfYear = `${year}-12-31 23:59:59`;
+
+    const counts = await User.findAll({
+      attributes: [
+        [fn('MONTH', col('createdAt')), 'month'],
+        [fn('COUNT', col('userID')), 'count']
+      ],
+      where: {
+        role: 'lawyer',
+        createdAt: {
+          [Op.between]: [startOfYear, endOfYear]
+        }
+      },
+      group: [fn('MONTH', col('createdAt'))],
+      order: [literal('month')]
+    });
+
+    const result = monthNames.map((name, index) => {
+      const monthData = counts.find(c => c.dataValues.month === index + 1);
+      return {
+        month: name,
+        count: monthData ? monthData.dataValues.count : 0
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching lawyer counts by month:', error);
+    res.status(500).json({ message: 'Server error', details: error.message });
+  }
+};
+
+exports.getCustomerCountsByMonth = async (req, res) => {
+  try {
+    const { year } = req.query;
+    if (!year) {
+      return res.status(400).json({ message: 'Year is required' });
+    }
+
+    const startOfYear = `${year}-01-01 00:00:00`;
+    const endOfYear = `${year}-12-31 23:59:59`;
+
+    const counts = await User.findAll({
+      attributes: [
+        [fn('MONTH', col('createdAt')), 'month'],
+        [fn('COUNT', col('userID')), 'count']
+      ],
+      where: {
+        role: 'customer',
+        createdAt: {
+          [Op.between]: [startOfYear, endOfYear]
+        }
+      },
+      group: [fn('MONTH', col('createdAt'))],
+      order: [literal('month')]
+    });
+
+    const result = monthNames.map((name, index) => {
+      const monthData = counts.find(c => c.dataValues.month === index + 1);
+      return {
+        month: name,
+        count: monthData ? monthData.dataValues.count : 0
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching customer counts by month:', error);
+    res.status(500).json({ message: 'Server error', details: error.message });
+  }
+};
