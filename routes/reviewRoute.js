@@ -7,7 +7,7 @@ const {Auth , AuthorizeRole} = require('../middleware/auth')
 
 
 
-router.post('/review', reviewController.createReview);
+router.post('/review',Auth, reviewController.createReview);
 
 
 router.get('/review/:id' ,  reviewController.getAllReview);

@@ -1,20 +1,29 @@
 const { where } = require('sequelize');
-const { Review } = require('../Associations/associations');
+const { Review, User } = require('../Associations/associations');
 const asyncHandler = require('express-async-handler');
 
 exports.createReview = asyncHandler(async (req, res, next) => {
-    const { rating, comment, userID } = req.body;
+    const { rating, comment, lawyerID } = req.body;
+    console.log('11111111111111111111111111')
+    const id = req.user.id
 
-    console.log(req.user.id)
+    const user = await User.findByPk(id);
+    if (!user) {
+        return res.status(404).json({ state: "Not Found", message: `user with id = ${id} not found in the system ` })
+    } 
+
+    const userName = user.first_name + " " + user.last_name
+    console.log(userName)
     // Create the new review
     const newReview = await Review.create({
         rating,
         comment,
-        userID // for lawyer 
+        lawyerID,
+        userName
     });
 
     // Fetch all reviews
-    const reviews = await Review.findAll({ where: { userID } });
+    const reviews = await Review.findAll({ where: { lawyerID } });
 
     // Calculate the sum of ratings and the count of reviews
     const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
