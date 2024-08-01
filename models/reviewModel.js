@@ -8,7 +8,11 @@ const Review = sequelize.define('Review', {
         autoIncrement: true,
         primaryKey: true
     },
-    userID: {
+    userName: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    lawyerID: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
