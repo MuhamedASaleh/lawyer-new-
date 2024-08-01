@@ -12,6 +12,10 @@ const Review = sequelize.define('Review', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    lawyerID: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     rating: {
         type: DataTypes.INTEGER,
         allowNull: false,

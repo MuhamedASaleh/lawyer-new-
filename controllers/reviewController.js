@@ -5,7 +5,7 @@ const asyncHandler = require('express-async-handler');
 exports.createReview = asyncHandler(async (req, res, next) => {
     const { rating, comment, userID } = req.body;
 
-
+    console.log(req.user.id)
     // Create the new review
     const newReview = await Review.create({
         rating,
