@@ -52,18 +52,18 @@ User.hasMany(Case, {
 
 
 
+// Association for lawyerID
+User.hasMany(Review, {
+  foreignKey: 'lawyerID',
+  onDelete: 'CASCADE',
+  as: 'LawyerReviews'
+});
 
-  User.hasMany(Review, {
-    foreignKey: 'userID',
-    onDelete: 'CASCADE', // Cascade delete
-    as: 'Reviews' // Alias for the association (note the capital 'R')
-  });
-  
-  Review.belongsTo(User, {
-    foreignKey: 'userID',
-    onDelete: 'CASCADE', // Cascade delete
-    as: 'User' // Alias for the association (optional, in case you need it)
-  });
+Review.belongsTo(User, {
+  foreignKey: 'lawyerID',
+  onDelete: 'CASCADE',
+  as: 'Lawyer'
+});
 
 // (async () => {
 //     try {

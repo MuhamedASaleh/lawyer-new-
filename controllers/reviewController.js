@@ -45,7 +45,6 @@ exports.createReview = asyncHandler(async (req, res, next) => {
 exports.getAllReview = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { page = 1, limit = 10 } = req.query;
-
     // Convert page and limit to integers
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -64,7 +63,7 @@ exports.getAllReview = asyncHandler(async (req, res, next) => {
 
     // Fetch reviews with pagination
     const { rows: reviews, count: totalReviews } = await Review.findAndCountAll({
-        where: { userID: id },
+        where: { lawyerID: id },
         limit: limitNumber,
         offset,
     });
