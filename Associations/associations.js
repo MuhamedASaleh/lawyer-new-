@@ -1,3 +1,5 @@
+
+
 // const Admin = require('../models/adminModel');
 // const Call = require("../models/callModel");
 const Case = require("../models/caseModel");
@@ -39,6 +41,7 @@ User.hasMany(Case, {
     onDelete: 'CASCADE',
   });
 
+
   User.hasMany(QuestionAnswer, {foreignKey: 'userID',onDelete: 'CASCADE', // Cascade delete
   });
   
@@ -47,13 +50,28 @@ User.hasMany(Case, {
     onDelete: 'CASCADE', // Cascade delete
   });
 
-(async () => {
-    try {
-        await sequelize.sync({ alter: true }); // or { force: true } to drop and recreate tables
-        console.log('Database synced!');
-    } catch (error) {
-        console.error('Error syncing database:', error);
-    }
-})();
 
-module.exports = { Call, Case, News, Notification, Review, UserCase, Wallet, Admin ,User ,QuestionAnswer };
+
+
+  User.hasMany(Review, {
+    foreignKey: 'userID',
+    onDelete: 'CASCADE', // Cascade delete
+    as: 'Reviews' // Alias for the association (note the capital 'R')
+  });
+  
+  Review.belongsTo(User, {
+    foreignKey: 'userID',
+    onDelete: 'CASCADE', // Cascade delete
+    as: 'User' // Alias for the association (optional, in case you need it)
+  });
+
+// (async () => {
+//     try {
+//         await sequelize.sync({ force: true }); // or { force: true } to drop and recreate tables
+//         console.log('Database synced!');
+//     } catch (error) {
+//         console.error('Error syncing database:', error);
+//     }
+// })();
+
+module.exports = {  Case, Review ,User ,QuestionAnswer };

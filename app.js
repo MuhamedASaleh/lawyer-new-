@@ -50,7 +50,7 @@ const socketRoute = require('./routes/socket')(io)
 app.use('/api', socketRoute);
 
 // Sync database and start server
-sequelize.sync({ force: true })
+sequelize.sync({ force: false })
   .then(() => {
     console.log('Database synced');
     server.listen(port, () => {

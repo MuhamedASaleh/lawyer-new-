@@ -1,8 +1,10 @@
 // controllers/userController.js
+const { Sequelize } = require('sequelize');
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
 const { Op } = require('sequelize');
-const asyncHandler = require(`express-async-handler`)
+const asyncHandler = require(`express-async-handler`);
+const {Review} = require('../Associations/associations');
 
 exports.getUserById = async (req, res) => {
   try {
@@ -367,28 +369,59 @@ exports.getAllLawyers = async (req, res) => {
     // Calculate offset
     const offset = (pageNumber - 1) * limitNumber;
 
-    // Find all lawyers with pagination
+    // Find all lawyers with pagination and include their reviews
     const { count, rows } = await User.findAndCountAll({
       where: { role: 'lawyer' },
       limit: limitNumber,
-      offset
+      offset,
+      include: [{
+        model: Review,
+        as: 'Reviews',
+        attributes: []
+      }],
+      attributes: {
+        include: [
+          [Sequelize.fn('AVG', Sequelize.col('Reviews.rating')), 'averageRating']
+        ]
+      },
+      group: ['User.userID'],
+      subQuery: false
     });
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No lawyers found' });
     }
 
+    const lawyers = rows.map(lawyer => ({
+      userID: lawyer.userID,
+      role: lawyer.role,
+      first_name: lawyer.first_name,
+      last_name: lawyer.last_name,
+      phone_number: lawyer.phone_number,
+      personal_image: lawyer.personal_image,
+      national_number: lawyer.national_number,
+      lawyer_price: lawyer.lawyer_price,
+      specializations: lawyer.specializations,
+      certification: lawyer.certification,
+      status: lawyer.status,
+      createdAt: lawyer.createdAt,
+      updatedAt: lawyer.updatedAt,
+      averageRating: Math.ceil(parseFloat(lawyer.dataValues.averageRating)) // Applying Math.ceil to the average rating
+    }));
+
     res.json({
-      total: count,
-      totalPages: Math.ceil(count / limitNumber),
+      total: count.length,
+      totalPages: Math.ceil(count.length / limitNumber),
       currentPage: pageNumber,
       limit: limitNumber,
-      lawyers: rows
+      lawyers
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 
 // get all lawyers count 
 
