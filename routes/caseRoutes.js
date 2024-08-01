@@ -11,7 +11,8 @@ const {
   filterPendingCases,
   filterPendingCasesAdmin,
   countCases,
-  getCaseStatistics
+  getCaseStatistics,
+  getLawyerCaseCountsByMonth
 } = require('../controllers/caseController');
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
@@ -52,5 +53,7 @@ router.get('/caseCount', Auth, countCases);
 // get all cases for user(lawyer or customer ) by statistics  (day month year)
 router.get('/statistics', Auth, getCaseStatistics);
 
+// get all cases for user(lawyer or customer ) by statistics  (day month year)
 
+router.get('/lawyer-case-counts/:id',Auth, getLawyerCaseCountsByMonth);
 module.exports = router;

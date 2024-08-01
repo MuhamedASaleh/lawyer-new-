@@ -1,6 +1,6 @@
 const Case = require('../models/caseModel')
 // const User = require("../models/userModel")
-const { Op } = require('sequelize');
+const { Op, fn, col, literal } = require('sequelize');
 
 const asyncHandler = require('express-async-handler');
 const sequelize = require('../config/dbConfig');
@@ -16,7 +16,7 @@ exports.createCase = async (req, res) => {
       court_fees,
       status: 'pending',
       lawyerId: req.user.id,
-      customerId: 4, // here we should do somthing to modify that the custmor send file to get his id 
+      customerId:req.user.id, // here we should do somthing to modify that the custmor send file to get his id 
     });
 
     const caseWithDetails = await Case.findByPk(newCase.caseID);
@@ -587,4 +587,63 @@ console.log(formattedMonthly);
     monthly: formattedMonthly,
     yearly: formattedYearly
   });
+});
+
+
+
+
+exports.getLawyerCaseCountsByMonth = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { year } = req.query;
+
+  if (!year) {
+    return res.status(400).json({ error: 'Year parameter is required' });
+  }
+
+  // Set the start and end dates based on the year parameter
+  const startDate = `${year}-01-01 00:00:00`;
+  const endDate = `${year}-12-31 23:59:59`;
+
+  try {
+    // Fetch cases grouped by month
+    const cases = await Case.findAll({
+      attributes: [
+        [fn('DATE_FORMAT', col('createdAt'), '%m'), 'month'],
+        [fn('COUNT', col('caseID')), 'totalCount'],
+        [fn('SUM', literal('CASE WHEN status = "won" THEN 1 ELSE 0 END')), 'wonCount']
+      ],
+      where: {
+        lawyerId: id,
+        createdAt: {
+          [Op.between]: [startDate, endDate]
+        }
+      },
+      group: [fn('DATE_FORMAT', col('createdAt'), '%m')],
+      order: [fn('DATE_FORMAT', col('createdAt'), '%m')]
+    });
+
+    // Create a map for the results
+    const resultMap = {};
+    cases.forEach(c => {
+      const monthNumber = parseInt(c.get('month'), 10);
+      resultMap[monthNumber] = {
+        totalCount: parseInt(c.get('totalCount')),
+        wonCount: parseInt(c.get('wonCount'))
+      };
+    });
+
+    // Generate the final result with all 12 months
+    const result = monthNames.map((monthName, index) => {
+      const monthNumber = index + 1;
+      return {
+        month: monthName,
+        totalCount: resultMap[monthNumber]?.totalCount || 0,
+        wonCount: resultMap[monthNumber]?.wonCount || 0
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
