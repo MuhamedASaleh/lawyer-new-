@@ -3,16 +3,14 @@
 const Case = require("../models/caseModel");
 // const News = require("../models/newsModel");
 // const Notification = require("../models/notificationModel");
-// const Review = require("../models/reviewModel");
+const Review = require("../models/reviewModel");
 // const UserCase = require("../models/userCaseModel");
 const User = require('../models/userModel');
 const QuestionAnswer = require('../models/questionAnswerModel');
 // const Wallet = require("../models/walletModel");
 
 // relation between question and user
-User.hasMany(QuestionAnswer, {
-    foreignKey: 'userID',
-    onDelete: 'CASCADE', // Cascade delete
+User.hasMany(QuestionAnswer, {foreignKey: 'userID',onDelete: 'CASCADE', // Cascade delete
   });
   
   QuestionAnswer.belongsTo(User, {
@@ -39,6 +37,14 @@ User.hasMany(Case, {
   Case.belongsTo(User, {
     foreignKey: 'customerId',
     onDelete: 'CASCADE',
+  });
+
+  User.hasMany(QuestionAnswer, {foreignKey: 'userID',onDelete: 'CASCADE', // Cascade delete
+  });
+  
+  QuestionAnswer.belongsTo(User, {
+    foreignKey: 'userID',
+    onDelete: 'CASCADE', // Cascade delete
   });
 
 (async () => {

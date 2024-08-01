@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/dbConfig');
+const { type } = require('../Validations/userValidator');
 
 const User = sequelize.define('User', {
   userID: {
@@ -41,6 +42,14 @@ const User = sequelize.define('User', {
   lawyer_price: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true
+  },
+  averageRating:{
+    type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            min: 1,
+            max: 5
+        }
   },
   specializations: {
     type: DataTypes.ENUM(
