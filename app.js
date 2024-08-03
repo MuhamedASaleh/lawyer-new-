@@ -46,9 +46,8 @@ app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
-const socketRoute = require('./routes/socket')(io)
-app.use( socketRoute);
-
+const {handleSocketConnection} = require('./controllers/socketController')
+handleSocketConnection(io)
 // Sync database and start server
 sequelize.sync({ force: false })
   .then(() => {
