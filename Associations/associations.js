@@ -74,4 +74,4 @@ Review.belongsTo(User, {
 //     }
 // })();
 
-module.exports = {  Case, Review ,User ,QuestionAnswer };
+module.exports = {  Case,Review ,User ,QuestionAnswer };

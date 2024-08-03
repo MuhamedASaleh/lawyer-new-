@@ -247,6 +247,8 @@ exports.getLawyersByStatusAccept = async (req, res) => {
     // Calculate offset
     const offset = (pageNumber - 1) * limitNumber;
 
+    // console.log('Offset:', offset); // Debugging log
+
     // Find all lawyers with status 'accept'
     const { count, rows } = await User.findAndCountAll({
       where: {
@@ -255,7 +257,7 @@ exports.getLawyersByStatusAccept = async (req, res) => {
       },
       include: [{
         model: Review,
-        as: 'Reviews',
+        as: 'LawyerReviews', // Use the correct alias
         attributes: ['rating']
       }],
       limit: limitNumber,
@@ -266,10 +268,12 @@ exports.getLawyersByStatusAccept = async (req, res) => {
       return res.status(404).json({ error: 'No lawyers with status "accept" found' });
     }
 
+    // console.log('Lawyers found:', rows.length); // Debugging log
+
     // Calculate the average rating for each lawyer
     const lawyers = rows.map(lawyer => {
-      const totalRatings = lawyer.Reviews.reduce((sum, review) => sum + review.rating, 0);
-      const countReviews = lawyer.Reviews.length;
+      const totalRatings = lawyer.LawyerReviews.reduce((sum, review) => sum + review.rating, 0); // Use the correct alias
+      const countReviews = lawyer.LawyerReviews.length; // Use the correct alias
       const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
 
       return {
@@ -286,11 +290,10 @@ exports.getLawyersByStatusAccept = async (req, res) => {
       lawyers
     });
   } catch (error) {
-    console.error(error);
+    console.error('Server error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
-
 // Function to get all lawyers with status 'pending'
 exports.getLawyersByStatusPending = async (req, res) => {
   try {
