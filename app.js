@@ -47,7 +47,7 @@ app.get('/test', (req, res) => {
 });
 
 const socketRoute = require('./routes/socket')(io)
-app.use('/api', socketRoute);
+app.use( socketRoute);
 
 // Sync database and start server
 sequelize.sync({ force: false })
