@@ -15,10 +15,7 @@ const Admin = sequelize.define('Admin', {
     phoneNumber: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
-        validate: {
-            is: /^[0-9]+$/ // Only allow numbers
-        }
+        unique: true
     },
     password: {
         type: DataTypes.STRING,

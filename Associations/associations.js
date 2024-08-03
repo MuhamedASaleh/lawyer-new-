@@ -67,7 +67,7 @@ Review.belongsTo(User, {
 
 // (async () => {
 //     try {
-//         await sequelize.sync({ force: true }); // or { force: true } to drop and recreate tables
+//         await sequelize.sync({ alter: true }); // or { force: true } to drop and recreate tables
 //         console.log('Database synced!');
 //     } catch (error) {
 //         console.error('Error syncing database:', error);

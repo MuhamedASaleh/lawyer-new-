@@ -41,29 +41,49 @@ exports.getCaseDetails = async (req, res) => {
   }
 };
 
-exports.updateCaseStatus = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { status } = req.body;
+// exports.updateCaseStatuss = asyncHandler(async (req, res) => {
+//   const { caseId } = req.params;
+//   const { newStatus } = req.body; // Assuming you send newStatus in the request body
 
-    const caseToUpdate = await Case.findByPk(caseId);
-    if (!caseToUpdate) {
-      return res.status(404).json({ message: 'Case not found' });
-    }
+//   // Validate newStatus (ensure it's a valid status)
+//   const validStatuses = [
+//     'inspection', 'court', 'pleadings', 'completed', 
+//     'won', 'lost', 'pending', 'accepted', 'decline'
+//   ];
+//   if (!validStatuses.includes(newStatus)) {
+//     return res.status(400).json({ message: 'Invalid status' });
+//   }
 
+//   // Fetch the case from the database
+//   const caseData = await Case.findByPk(caseId);
+//   if (!caseData) {
+//     return res.status(404).json({ message: 'Case not found' });
+//   }
 
-    if (caseToUpdate.status !== 'pending') {
-      return res.status(400).json({ message: 'Case is not pending' });
-    }
+//   // Get the current status from the status history
+//   const statusHistory = caseData.statusHistory || [];
+//   const currentStatus = statusHistory[statusHistory.length - 1];
 
-    caseToUpdate.status = status;
-    await caseToUpdate.save();
+//   if (currentStatus && currentStatus.status === newStatus) {
+//     return res.status(400).json({ message: 'Case is already in this status' });
+//   }
 
-    res.status(200).json(caseToUpdate);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//   // Update status history
+//   if (currentStatus) {
+//     currentStatus.endDate = new Date(); // Set end date for the current status
+//   }
+//   statusHistory.push({
+//     status: newStatus,
+//     startDate: new Date(),
+//     endDate: null // This will be set when the next status is updated
+//   });
+
+//   // Save the updated case
+//   caseData.statusHistory = statusHistory;
+//   await caseData.save();
+
+//   res.status(200).json({ message: 'Case status updated successfully' });
+// });
 
 exports.updateCustomerFiles = async (req, res) => {
   try {
@@ -647,3 +667,34 @@ exports.getLawyerCaseCountsByMonth = asyncHandler(async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+// exports.getCaseStatusHistory = asyncHandler(async (req, res) => {
+//   const { caseId } = req.params;
+//   const userId = req.user.id; // ID of the currently authenticated user
+
+//   // Fetch the case and check if the user is authorized
+//   const caseDetails = await Case.findOne({
+//     where: {
+//       caseID: caseId,
+//       [Op.or]: [
+//         { lawyerId: userId },
+//         { customerId: userId }
+//       ]
+//     }
+//   });
+
+//   if (!caseDetails) {
+//     return res.status(404).json({ message: 'Case not found or user not authorized' });
+//   }
+
+//   // Ensure statusHistory is an array
+//   const statusHistory = Array.isArray(caseDetails.statusHistory) ? caseDetails.statusHistory : [];
+
+//   // Extract the status history
+//   const formattedStatusHistory = statusHistory.map(status => ({
+//     status: status.status,
+//     start: new Date(status.start).toISOString(),
+//     end: status.end ? new Date(status.end).toISOString() : null
+//   }));
+
+//   res.status(200).json({ caseDetails: { ...caseDetails.toJSON(), statusHistory: formattedStatusHistory } });
+// });

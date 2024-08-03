@@ -12,7 +12,9 @@ const {
   filterPendingCasesAdmin,
   countCases,
   getCaseStatistics,
-  getLawyerCaseCountsByMonth
+  getLawyerCaseCountsByMonth,
+  getCaseStatusHistory,
+  updateCaseStatuss
 } = require('../controllers/caseController');
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
@@ -24,6 +26,7 @@ router.get('/:caseId/details', getCaseDetails);
 
 // Route to update case status to accepted (for customers only)
 router.put('/:caseId/updateStatus', updateCaseStatus);
+// router.put('/:caseId/updateStatuss', updateCaseStatuss);
 
 // Route to update customer files (for customers only)
 router.put('/:caseId/updateCustomerFiles', updateCustomerFiles);
@@ -56,4 +59,6 @@ router.get('/statistics', Auth, getCaseStatistics);
 // get all cases for user(lawyer or customer ) by statistics  (day month year)
 
 router.get('/lawyer-case-counts/:id',Auth, getLawyerCaseCountsByMonth);
+// router.get('/:caseId/status-history',Auth, getCaseStatusHistory);
+
 module.exports = router;

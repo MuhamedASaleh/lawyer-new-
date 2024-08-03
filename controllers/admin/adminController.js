@@ -19,12 +19,29 @@ const createAdmin = async (req, res) => {
 // Get all admins
 const getAllAdmins = async (req, res) => {
     try {
-        const admins = await Admin.findAll();
-        res.status(200).json(admins);
+        const { page = 1, limit = 10 } = req.query;
+        
+        // Calculate offset
+        const offset = (page - 1) * limit;
+        
+        // Fetch admins with pagination
+        const { rows: admins, count } = await Admin.findAndCountAll({
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+        
+        // Send response with pagination data
+        res.status(200).json({
+            totalItems: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page),
+            admins
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 // Get admin by ID
 const getAdminById = async (req, res) => {
