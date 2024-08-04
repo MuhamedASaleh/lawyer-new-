@@ -14,6 +14,7 @@ const caseRoutes = require('./routes/caseRoutes');
 const questionAnswerRoutes = require('./routes/questionAnswerRoutes');
 const adminRoutes = require('./routes/admin/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoute');
+const paymentRoutes = require('./routes/payment');
 const errorMiddleWare = require('./middleware/errorMiddleWare');
 
 dotenv.config({ path: '.env' });
@@ -38,6 +39,7 @@ app.use('/api/questionAnswer', questionAnswerRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api/cases', caseRoutes);
+app.use('/api', paymentRoutes);
 
 app.use(errorMiddleWare);
 
