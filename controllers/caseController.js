@@ -41,29 +41,54 @@ exports.getCaseDetails = async (req, res) => {
   }
 };
 
-exports.updateCaseStatus = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { status } = req.body;
+// exports.updateCaseStatus = asyncHandler(async (req, res) => {
+//   const { caseId } = req.params;
+//   const { status } = req.body;
 
-    const caseToUpdate = await Case.findByPk(caseId);
-    if (!caseToUpdate) {
-      return res.status(404).json({ message: 'Case not found' });
-    }
+//   try {
+//     const caseToUpdate = await Case.findByPk(caseId);
 
+//     if (!caseToUpdate) {
+//       return res.status(404).json({ message: 'Case not found' });
+//     }
 
-    if (caseToUpdate.status !== 'pending') {
-      return res.status(400).json({ message: 'Case is not pending' });
-    }
+//     // If the status is 'declined', update the status and delete the case
+//     if (status === 'declined') {
+//       caseToUpdate.status = 'declined';
+//       await caseToUpdate.save();
+//       await caseToUpdate.destroy();
+//       return res.status(200).json({ message: 'Case declined and deleted successfully' });
+//     }
 
-    caseToUpdate.status = status;
-    await caseToUpdate.save();
+//     // Ensure the case is in 'pending' status before updating to 'accepted'
+//     if (status === 'accepted' && caseToUpdate.status !== 'pending') {
+//       return res.status(400).json({ message: 'Case is not pending' });
+//     }
 
-    res.status(200).json(caseToUpdate);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     // Track the status history
+//     const currentStatus = caseToUpdate.status;
+//     const now = new Date();
+//     const statusHistory = caseToUpdate.statusHistory;
+
+//     // Update end time for the current status
+//     if (statusHistory.length > 0) {
+//       statusHistory[statusHistory.length - 1].end = now;
+//     }
+
+//     // Add the new status with start time
+//     statusHistory.push({ status, start: now, end: null });
+
+//     // Update the case
+//     caseToUpdate.status = status;
+//     caseToUpdate.statusHistory = statusHistory;
+
+//     await caseToUpdate.save();
+
+//     res.status(200).json(caseToUpdate);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
 
 exports.updateCustomerFiles = async (req, res) => {
   try {
@@ -183,41 +208,41 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
 
 
 
-exports.updateCaseStatus = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { status } = req.body;
+// exports.updateCaseStatus = async (req, res) => {
+//   try {
+//     const { caseId } = req.params;
+//     const { status } = req.body;
 
-    const caseToUpdate = await Case.findByPk(caseId);
-    if (!caseToUpdate) {
-      return res.status(404).json({ message: 'Case not found' });
-    }
+//     const caseToUpdate = await Case.findByPk(caseId);
+//     if (!caseToUpdate) {
+//       return res.status(404).json({ message: 'Case not found' });
+//     }
 
-    if (status === 'declined') {
-      // Update the status to 'declined'
-      caseToUpdate.status = 'declined';
-      await caseToUpdate.save();
+//     if (status === 'declined') {
+//       // Update the status to 'declined'
+//       caseToUpdate.status = 'declined';
+//       await caseToUpdate.save();
 
-      // Delete the case from the database
-      await caseToUpdate.destroy();
+//       // Delete the case from the database
+//       await caseToUpdate.destroy();
 
-      return res.status(200).json({ message: 'Case declined and deleted successfully' });
-    }
+//       return res.status(200).json({ message: 'Case declined and deleted successfully' });
+//     }
 
-    // Ensure case is in 'pending' status before updating to 'accepted'
-    if (caseToUpdate.status !== 'pending') {
-      return res.status(400).json({ message: 'Case is not pending' });
-    }
+//     // Ensure case is in 'pending' status before updating to 'accepted'
+//     if (caseToUpdate.status !== 'pending') {
+//       return res.status(400).json({ message: 'Case is not pending' });
+//     }
 
-    // Update case status to 'accepted'
-    caseToUpdate.status = status;
-    await caseToUpdate.save();
+//     // Update case status to 'accepted'
+//     caseToUpdate.status = status;
+//     await caseToUpdate.save();
 
-    res.status(200).json(caseToUpdate);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     res.status(200).json(caseToUpdate);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 exports.updateCustomerFiles = async (req, res) => {
   try {
@@ -647,3 +672,53 @@ exports.getLawyerCaseCountsByMonth = asyncHandler(async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+exports.updateCaseStatus = asyncHandler(async (req, res) => {
+  const { caseId } = req.params;
+  const { status } = req.body;
+
+  const caseToUpdate = await Case.findByPk(caseId);
+
+  if (!caseToUpdate) {
+    return res.status(404).json({ message: 'Case not found' });
+  }
+
+  const now = new Date();
+  let statusHistory = caseToUpdate.statusHistory || [];
+
+  // Update end time for the current status
+  if (statusHistory.length > 0) {
+    statusHistory[statusHistory.length - 1].end = now;
+  }
+
+  // Add the new status with start time
+  statusHistory.push({ status, start: now, end: null });
+
+  caseToUpdate.status = status;
+  caseToUpdate.statusHistory = statusHistory;
+
+  if (status === 'declined') {
+    await caseToUpdate.destroy();
+    return res.status(200).json({ message: 'Case declined and deleted successfully' });
+  }
+
+  await caseToUpdate.save();
+
+  console.log('Updated case:', caseToUpdate); // Log for debugging
+
+  res.status(200).json(caseToUpdate);
+});
+
+exports.getCaseStatusHistory = asyncHandler(async (req, res) => {
+  const { caseId } = req.params;
+
+  const caseToRetrieve = await Case.findByPk(caseId, {
+    attributes: ['caseID', 'statusHistory'],
+  });
+
+  if (!caseToRetrieve) {
+    return res.status(404).json({ message: 'Case not found' });
+  }
+
+  res.status(200).json(caseToRetrieve);
+});
+

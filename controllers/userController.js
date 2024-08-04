@@ -1,24 +1,74 @@
 // controllers/userController.js
-const { Sequelize } = require('sequelize');
+// const { Sequelize, Op, fn, col, literal } = require('sequelize');
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
 const { Op, fn, col, literal } = require('sequelize');
 const asyncHandler = require(`express-async-handler`);
 const {Review} = require('../Associations/associations');
+const sequelize = require('../config/dbConfig');
 
-exports.getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found user by id' });
-    }
+exports.getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findByPk(id);
 
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
   }
-};
+
+  if (user.role === 'customer') {
+    return res.json({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phoneNumber: user.phone_number,
+      personalImage: user.personal_image
+    });
+  } else if (user.role === 'lawyer') {
+    // Fetch all reviews for the lawyer
+    const reviews = await Review.findAll({
+      where: { lawyerID: user.userID },
+      attributes: ['rating']
+    });
+
+    // Calculate the total number of reviews
+    const totalReviews = reviews.length;
+
+    // Initialize counts for each star rating
+    const starCounts = Array(6).fill(0);
+
+    // Sum ratings and count each star rating
+    let sumRatings = 0;
+    reviews.forEach(review => {
+      const rating = review.rating;
+      starCounts[rating]++;
+      sumRatings += rating;
+    });
+
+    // Calculate average rating
+    const averageRating = totalReviews > 0 ? (sumRatings / totalReviews).toFixed(1) : 0;
+
+    // Calculate percentages and include counts for each star rating
+    const ratingCounts = starCounts.map((count, index) => ({
+      stars: index,
+      count: count,
+      percentage: totalReviews > 0 ? ((count / totalReviews) * 100).toFixed(2) : 0
+    }));
+
+    return res.json({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phoneNumber: user.phone_number,
+      personalImage: user.personal_image,
+      lawyerPrice: user.lawyer_price,
+      specializations: user.specializations,
+      certification: user.certification,
+      description: user.description,
+      ratingCounts: ratingCounts,
+      averageRating: parseFloat(averageRating)
+    });
+  } else {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+});
 
 exports.updateUser = async (req, res) => {
   try {
@@ -52,25 +102,53 @@ exports.deleteUser = async (req, res) => {
 };
 
 exports.getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findByPk(req.user.id); // req.userID is set by the middleware
+  const user = await User.findByPk(req.user.id);
 
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Check user role and respond accordingly
   if (user.role === 'customer') {
     // Display customer-specific data
-    res.json({
+    return res.json({
       firstName: user.first_name,
       lastName: user.last_name,
       phoneNumber: user.phone_number,
-      personalImage: user.personal_image,
-      // Add other customer-specific fields if needed
+      personalImage: user.personal_image
     });
   } else if (user.role === 'lawyer') {
+    // Fetch all reviews for the lawyer
+    const reviews = await Review.findAll({
+      where: { lawyerID: user.userID },
+      attributes: ['rating']
+    });
+
+    // Calculate the total number of reviews
+    const totalReviews = reviews.length;
+
+    // Initialize counts for each star rating
+    const starCounts = Array(6).fill(0);
+
+    // Sum ratings and count each star rating
+    let sumRatings = 0;
+    reviews.forEach(review => {
+      const rating = review.rating;
+      starCounts[rating]++;
+      sumRatings += rating;
+    });
+
+    // Calculate average rating
+    const averageRating = totalReviews > 0 ? (sumRatings / totalReviews).toFixed(1) : 0;
+
+    // Calculate percentages and include counts for each star rating
+    const ratingCounts = starCounts.map((count, index) => ({
+      stars: index,
+      count: count,
+      percentage: totalReviews > 0 ? ((count / totalReviews) * 100).toFixed(2) : 0
+    }));
+
     // Display lawyer-specific data
-    res.json({
+    return res.json({
       firstName: user.first_name,
       lastName: user.last_name,
       phoneNumber: user.phone_number,
@@ -78,33 +156,42 @@ exports.getProfile = asyncHandler(async (req, res) => {
       lawyerPrice: user.lawyer_price,
       specializations: user.specializations,
       certification: user.certification,
-      // Add other lawyer-specific fields if needed
+      description: user.description,
+      ratingCounts: ratingCounts,
+      averageRating: parseFloat(averageRating)
     });
   } else {
-    res.status(400).json({ error: 'Invalid role' });
+    return res.status(400).json({ error: 'Invalid role' });
   }
+});
 
-}
-)
 // Update User Profile
 exports.updateProfile = asyncHandler(async (req, res) => {
+  const { first_name, last_name, phone_number, personal_image, description } = req.body;
 
-  const { first_name, last_name, phone_number, personal_image } = req.body;
-  const user = await User.findByPk(req.user.id,{
-    attributes: { exclude: ['password',`confirm_password` , `createdAt` , `updatedAt`] },
+  // Find the user by their primary key (ID) and exclude sensitive fields from the response
+  const user = await User.findByPk(req.user.id, {
+    attributes: { exclude: ['password', 'confirm_password', 'createdAt', 'updatedAt'] },
   });
+
   if (!user) {
-    return res.status(404).json({ error: 'User not found ,  update profile controller' });
+    return res.status(404).json({ error: 'User not found, update profile controller' });
   }
+
+  // Update the user fields with the provided values or keep the existing values
   user.first_name = first_name || user.first_name;
   user.last_name = last_name || user.last_name;
   user.phone_number = phone_number || user.phone_number;
   user.personal_image = personal_image || user.personal_image;
-  await user.save();
-  
-  res.status(201).json({ message: "updated", data: user });
+  user.description = description || user.description;
+ 
 
-})
+  // Save the updated user profile
+  await user.save();
+
+  res.status(201).json({ message: "updated", data: user });
+});
+
 
 //GetAllUsersByStatus -lawyers (if condation )
 exports.getUsersByStatus = async (req, res) => {
