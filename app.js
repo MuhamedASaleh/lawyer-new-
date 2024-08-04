@@ -51,7 +51,7 @@ app.get('/test', (req, res) => {
 const {handleSocketConnection} = require('./controllers/socketController')
 handleSocketConnection(io)
 // Sync database and start server
-sequelize.sync({ force: false })
+sequelize.sync({ force: false })  
   .then(() => {
     console.log('Database synced');
     server.listen(port, () => {

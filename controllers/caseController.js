@@ -16,7 +16,7 @@ exports.createCase = async (req, res) => {
       court_fees,
       status: 'pending',
       lawyerId: req.user.id,
-      customerId:req.user.id, // here we should do somthing to modify that the custmor send file to get his id 
+      customerId: req.user.id, // here we should do somthing to modify that the custmor send file to get his id 
     });
 
     const caseWithDetails = await Case.findByPk(newCase.caseID);
@@ -89,11 +89,16 @@ exports.getCaseDetails = async (req, res) => {
 //     res.status(500).json({ message: error.message });
 //   }
 // });
+const axios = require('axios');
+require('dotenv').config(); // Ensure this is included to load environment variables
 
-exports.updateCustomerFiles = async (req, res) => {
-  try {
+// Middleware to handle file uploads
+
+exports.updateCustomerFiles = (
+  asyncHandler(async (req, res) => {
     const { caseId } = req.params;
-    const { files } = req.body;
+    const { files } = req.body; // Assuming 'files' is part of the request body
+
 
     const caseToUpdate = await Case.findByPk(caseId);
     if (!caseToUpdate) {
@@ -104,15 +109,73 @@ exports.updateCustomerFiles = async (req, res) => {
     caseToUpdate.customer_files = files;
 
     await caseToUpdate.save();
+    // Redirect the user to the payment page
+    const options = {
+      method: 'POST',
+      url: 'https://api.tap.company/v2/charges/',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        Authorization: `Bearer ${process.env.TAP_SECRET_KEY}` // Ensure TAP_SECRET_KEY is set in your .env file
+      },
+      data: {
+        amount: 100,
+        currency: 'KWD',
+        customer_initiated: true,
+        threeDSecure: true,
+        save_card: false,
+        description: 'Test for payment',
+        receipt: { email: true, sms: true },
+        customer: {
+          first_name: 'Alo',
+          last_name: 'Fog',
+          email: 'test@test.com', // Replace with actual customer email
+        },
+        metadata: {
+          caseId: caseId,
+          userId: 1 // Assuming you have user ID in the request object
+        },
+        source: { id: 'src_all' },
+        post: {
+          url: 'https://acbe-41-233-45-100.ngrok-free.app/api/tap/webhook' // Replace with your actual webhook URL
+        },
+        redirect: {
+          url: 'https://www.sofascore.com/' // Link to Sofascore
+        }
+      }
+    };
+    
+    console.log('=============================================== 112')
+    try {
+      const response = await axios.request(options);
+      res.status(200).json({
+        status: 'success',
+        data: response.data,
+        payment_url: response.data.transaction.url // Redirect URL to the payment page
+      });
+    } catch (error) {
+      if (error.response) {
+        res.status(error.response.status).json({
+          status: 'error',
+          message: error.response.data,
+        });
+      } else if (error.request) {
+        res.status(500).json({
+          status: 'error',
+          message: 'No response received from Tap API',
+        });
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: error.message,
+        });
+      }
+    }
+  }))
 
-    res.status(200).json(caseToUpdate);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 
-exports.filterCurrentCase = asyncHandler(async (req, res) => { 
+exports.filterCurrentCase = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 10 } = req.query;
   console.log(req.user.id);
 
@@ -244,26 +307,26 @@ exports.filterCurrentCaseAdmin = asyncHandler(async (req, res) => {
 //   }
 // };
 
-exports.updateCustomerFiles = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { files } = req.body;
+// exports.updateCustomerFiles = async (req, res) => {
+//   try {
+//     const { caseId } = req.params;
+//     const { files } = req.body;
 
-    const caseToUpdate = await Case.findByPk(caseId);
-    if (!caseToUpdate) {
-      return res.status(404).json({ message: 'Case not found' });
-    }
+//     const caseToUpdate = await Case.findByPk(caseId);
+//     if (!caseToUpdate) {
+//       return res.status(404).json({ message: 'Case not found' });
+//     }
 
-    // Add the new files to the existing customer_files
-    caseToUpdate.customer_files = files;
+//     // Add the new files to the existing customer_files
+//     caseToUpdate.customer_files = files;
 
-    await caseToUpdate.save();
+//     await caseToUpdate.save();
 
-    res.status(200).json(caseToUpdate);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     res.status(200).json(caseToUpdate);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 //filtering completed cases with won or lost or both of them 
 exports.filterCompletedCases = asyncHandler(async (req, res) => {
@@ -606,7 +669,7 @@ exports.getCaseStatistics = asyncHandler(async (req, res) => {
   const formattedDaily = formatStatistics(statistics.daily);
   const formattedMonthly = formatStatistics(statistics.monthly);
   const formattedYearly = formatStatistics(statistics.yearly);
-console.log(formattedMonthly);
+  console.log(formattedMonthly);
   res.status(200).json({
     daily: formattedDaily,
     monthly: formattedMonthly,

@@ -1,13 +1,13 @@
 const router = require('express').Router();
-const { 
-  filterCurrentCase, 
+const {
+  filterCurrentCase,
   filterCurrentCaseAdmin,
-  filterCompletedCases, 
+  filterCompletedCases,
   filterCompletedCasesAdmin,
-  createCase, 
-  getCaseDetails, 
-  updateCaseStatus, 
-  updateCustomerFiles, 
+  createCase,
+  getCaseDetails,
+  updateCaseStatus,
+  updateCustomerFiles,
   filterPendingCases,
   filterPendingCasesAdmin,
   countCases,
@@ -15,6 +15,7 @@ const {
   getLawyerCaseCountsByMonth,
   getCaseStatusHistory,
 } = require('../controllers/caseController');
+const { upload } = require('../utils/files')
 const { Auth, AuthorizeRole } = require('../middleware/auth');
 
 // Route to create a new case
@@ -27,7 +28,7 @@ router.get('/:caseId/details', getCaseDetails);
 router.put('/:caseId/updateStatus', updateCaseStatus);
 
 // Route to update customer files (for customers only)
-router.put('/:caseId/updateCustomerFiles', updateCustomerFiles);
+router.put('/:caseId',upload ,  updateCustomerFiles);
 
 // Route to filter current cases
 router.get('/filterCurrentCase', Auth, AuthorizeRole('lawyer', 'customer'), filterCurrentCase);
