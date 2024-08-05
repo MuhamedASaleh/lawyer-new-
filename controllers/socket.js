@@ -12,7 +12,7 @@ exports.handleSocketConnection = function (io) {
 
 
         // Join private room
-        socket.on('join-private-room', ({ roomId, callerId, calleeId }) => {
+        socket.on('joinRoom', ({ roomId, callerId, calleeId }) => {
             const caller = onlineUsers.find(user => user.userId === callerId);
             const callee = onlineUsers.find(user => user.userId === calleeId);
             if (caller && callee) {
