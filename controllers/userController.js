@@ -4,11 +4,11 @@ const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
 const { Op, fn, col, literal } = require('sequelize');
 const asyncHandler = require(`express-async-handler`);
-const {Review} = require('../Associations/associations');
+const {Review, Case} = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
 
 exports.getUserById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params;  
   const user = await User.findByPk(id);
 
   if (!user) {
@@ -53,6 +53,11 @@ exports.getUserById = asyncHandler(async (req, res) => {
       percentage: totalReviews > 0 ? ((count / totalReviews) * 100).toFixed(2) : 0
     }));
 
+    // Fetch count of won cases for the lawyer
+    const wonCasesCount = await Case.count({
+      where: { lawyerId: user.userID, status: 'won' }
+    });
+
     return res.json({
       firstName: user.first_name,
       lastName: user.last_name,
@@ -63,7 +68,8 @@ exports.getUserById = asyncHandler(async (req, res) => {
       certification: user.certification,
       description: user.description,
       ratingCounts: ratingCounts,
-      averageRating: parseFloat(averageRating)
+      averageRating: parseFloat(averageRating),
+      wonCasesCount: wonCasesCount
     });
   } else {
     return res.status(400).json({ error: 'Invalid role' });
@@ -147,6 +153,11 @@ exports.getProfile = asyncHandler(async (req, res) => {
       percentage: totalReviews > 0 ? ((count / totalReviews) * 100).toFixed(2) : 0
     }));
 
+    // Fetch count of won cases for the lawyer
+    const wonCasesCount = await Case.count({
+      where: { lawyerId: user.userID, status: 'won' }
+    });
+
     // Display lawyer-specific data
     return res.json({
       firstName: user.first_name,
@@ -158,7 +169,8 @@ exports.getProfile = asyncHandler(async (req, res) => {
       certification: user.certification,
       description: user.description,
       ratingCounts: ratingCounts,
-      averageRating: parseFloat(averageRating)
+      averageRating: parseFloat(averageRating),
+      wonCasesCount: wonCasesCount
     });
   } else {
     return res.status(400).json({ error: 'Invalid role' });
