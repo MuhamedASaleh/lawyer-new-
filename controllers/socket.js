@@ -10,6 +10,7 @@ exports.handleSocketConnection = function (io) {
             io.emit('update-online-users', { onlineUsers });
         });
 
+
         // Join private room
         socket.on('join-private-room', ({ roomId, callerId, calleeId }) => {
             const caller = onlineUsers.find(user => user.userId === callerId);

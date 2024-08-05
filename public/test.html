@@ -229,174 +229,159 @@
  </body>
  </html>
    -->
-<!--  -->
-
-
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socket.io and WebRTC Test</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const socket = io(); // Connect to Socket.io server
-            const userId = prompt('Enter your user ID:'); // Prompt user for ID
-
-            const peerConnections = {}; // Store peer connections
-            const localStream = new MediaStream(); // Stream for local audio/video
-            let currentRoomId = '';
-
-            // Function to handle ICE candidates
-            const handleICECandidate = (event, target) => {
-                if (event.candidate) {
-                    socket.emit('candidate', { target, candidate: event.candidate });
-                }
-            };
-
-            // Function to handle signaling
-            const handleSignaling = (event, target, sdpType, video) => {
-                const peerConnection = new RTCPeerConnection();
-                peerConnections[target] = peerConnection;
-
-                peerConnection.onicecandidate = (event) => handleICECandidate(event, target);
-                peerConnection.ontrack = (event) => {
-                    const remoteStream = document.getElementById('remote-stream');
-                    remoteStream.srcObject = event.streams[0];
-                };
-
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.setRemoteDescription(new RTCSessionDescription(event.sdp))
-                    .then(() => {
-                        if (sdpType === 'offer') {
-                            return peerConnection.createAnswer();
-                        }
-                    })
-                    .then(answer => {
-                        if (answer) {
-                            return peerConnection.setLocalDescription(answer);
-                        }
-                    })
-                    .then(() => {
-                        if (sdpType === 'offer') {
-                            socket.emit('answer', { target, sdp: peerConnection.localDescription });
-                        }
-                    });
-            };
-
-            // Handle WebRTC signaling
-            socket.on('offer', (data) => {
-                handleSignaling(data, data.sender, 'offer', data.video);
-            });
-
-            socket.on('answer', (data) => {
-                handleSignaling(data, data.sender, 'answer');
-            });
-
-            socket.on('candidate', (data) => {
-                const peerConnection = peerConnections[data.target];
-                if (peerConnection) {
-                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                }
-            });
-
-            socket.on('end-call-notification', (data) => {
-                console.log(`Call ended by ${data.target}`);
-                Object.values(peerConnections).forEach(pc => pc.close());
-                document.getElementById('remote-stream').srcObject = null;
-            });
-
-            // Add user to online users list
-            socket.emit('add-user', userId);
-
-            // Handle online users update
-            socket.on('update-online-users', (data) => {
-                const usersList = document.getElementById('online-users');
-                usersList.innerHTML = '';
-                data.onlineUsers.forEach(user => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `User ID: ${user.userId}`;
-                    usersList.appendChild(listItem);
-                });
-            });
-
-            // Handle join-room
-            socket.on('join-room', (data) => {
-                currentRoomId = data.roomId;
-                document.getElementById('room-info').textContent = `Room ID: ${data.roomId}`;
-            });
-
-            // Handle new user in room
-            socket.on('new-user', (data) => {
-                console.log(`New user in room: ${data.callerId} and ${data.calleeId}`);
-            });
-
-            // Handle user disconnection
-            socket.on('user-disconnected', (data) => {
-                const usersList = document.getElementById('online-users');
-                const listItems = usersList.querySelectorAll('li');
-                listItems.forEach(item => {
-                    if (item.textContent.includes(`User ID: ${data.userId}`)) {
-                        usersList.removeChild(item);
-                    }
-                });
-            });
-
-            // Start voice/video call
-            document.getElementById('start-call').addEventListener('click', () => {
-                const calleeId = prompt('Enter the ID of the user to call:');
-                const video = confirm('Include video?'); // Prompt to include video
-                const roomId = document.getElementById('room-id').value;
-                socket.emit('join-private-room', { roomId, callerId: userId, calleeId });
-                if (video) {
-                    // Add video stream
-                    navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-                        .then(stream => {
-                            localStream.addTrack(stream.getVideoTracks()[0]);
-                            document.getElementById('local-stream').srcObject = localStream;
-                            socket.emit('offer', { target: calleeId, sdp: null, video: true });
-                        })
-                        .catch(error => console.error('Error accessing media devices.', error));
-                } else {
-                    // Add audio stream only
-                    navigator.mediaDevices.getUserMedia({ audio: true })
-                        .then(stream => {
-                            localStream.addTrack(stream.getAudioTracks()[0]);
-                            document.getElementById('local-stream').srcObject = localStream;
-                            socket.emit('offer', { target: calleeId, sdp: null, video: false });
-                        })
-                        .catch(error => console.error('Error accessing media devices.', error));
-                }
-            });
-
-            // End call
-            document.getElementById('end-call').addEventListener('click', () => {
-                socket.emit('end-call', { roomId: currentRoomId, target: '' });
-            });
-
-            // Initialize local audio/video stream
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    localStream.addTrack(stream.getAudioTracks()[0]);
-                    document.getElementById('local-stream').srcObject = localStream;
-                })
-                .catch(error => {
-                    console.error('Error accessing media devices.', error);
-                });
-        });
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.io Video Call Test</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #video-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    video {
+      width: 300px;
+      height: 200px;
+      border: 1px solid #ddd;
+      margin: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Socket.io and WebRTC Test</h1>
-    <p>Online Users:</p>
-    <ul id="online-users"></ul>
-    <input type="text" id="room-id" placeholder="Enter Room ID">
+  <div id="video-container">
+    <h1>Video Call Test</h1>
+    <video id="local-video" autoplay muted></video>
+    <video id="remote-video" autoplay></video>
     <button id="start-call">Start Call</button>
-    <button id="end-call">End Call</button>
-    <p id="room-info"></p>
-    <video id="local-stream" autoplay muted></video>
-    <video id="remote-stream" autoplay></video>
+    <button id="end-call" disabled>End Call</button>
+    <button id="accept-call" disabled>Accept Call</button>
+    <button id="decline-call" disabled>Decline Call</button>
+  </div>
+
+  <script>
+    const socket = io();
+    let localStream;
+    let peerConnection;
+    const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    const localVideo = document.getElementById('local-video');
+    const remoteVideo = document.getElementById('remote-video');
+    const startCallButton = document.getElementById('start-call');
+    const endCallButton = document.getElementById('end-call');
+    const acceptCallButton = document.getElementById('accept-call');
+    const declineCallButton = document.getElementById('decline-call');
+
+    async function initLocalStream() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+      } catch (err) {
+        console.error('Error accessing media devices.', err);
+      }
+    }
+
+    function handleNegotiationNeeded(event) {
+      peerConnection.createOffer().then(offer => {
+        return peerConnection.setLocalDescription(offer);
+      }).then(() => {
+        socket.emit('video call offer', peerConnection.localDescription);
+      }).catch(err => console.error('Offer creation failed:', err));
+    }
+
+    function handleTrackEvent(event) {
+      remoteVideo.srcObject = event.streams[0];
+    }
+
+    function handleIceCandidate(event) {
+      if (event.candidate) {
+        socket.emit('video call ice-candidate', event.candidate);
+      }
+    }
+
+    function handleOffer(offer) {
+      peerConnection = new RTCPeerConnection(configuration);
+      peerConnection.ontrack = handleTrackEvent;
+      peerConnection.onicecandidate = handleIceCandidate;
+      peerConnection.addStream(localStream);
+
+      peerConnection.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+        return peerConnection.createAnswer();
+      }).then(answer => {
+        return peerConnection.setLocalDescription(answer);
+      }).then(() => {
+        socket.emit('video call answer', peerConnection.localDescription);
+      }).catch(err => console.error('Answer creation failed:', err));
+    }
+
+    function handleAnswer(answer) {
+      peerConnection.setRemoteDescription(new RTCSessionDescription(answer)).catch(err => console.error('Failed to set remote description:', err));
+    }
+
+    function handleIceCandidate(iceCandidate) {
+      peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(err => console.error('Failed to add ice candidate:', err));
+    }
+
+    function handleCallEnd() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+        remoteVideo.srcObject = null;
+      }
+    }
+
+    startCallButton.addEventListener('click', () => {
+      initLocalStream().then(() => {
+        peerConnection = new RTCPeerConnection(configuration);
+        peerConnection.ontrack = handleTrackEvent;
+        peerConnection.onicecandidate = handleIceCandidate;
+        peerConnection.addStream(localStream);
+
+        peerConnection.createOffer().then(offer => {
+          return peerConnection.setLocalDescription(offer);
+        }).then(() => {
+          socket.emit('start video call', { receiverId: 2 }); // Adjust receiverId accordingly
+        }).catch(err => console.error('Offer creation failed:', err));
+
+        startCallButton.disabled = true;
+        endCallButton.disabled = false;
+      });
+    });
+
+    endCallButton.addEventListener('click', () => {
+      socket.emit('end video call', { roomId: '1-2' }); // Adjust roomId accordingly
+      handleCallEnd();
+      startCallButton.disabled = false;
+      endCallButton.disabled = true;
+    });
+
+    acceptCallButton.addEventListener('click', () => {
+      socket.emit('accept video call', { callerId: 1 }); // Adjust callerId accordingly
+    });
+
+    declineCallButton.addEventListener('click', () => {
+      socket.emit('decline video call', { callerId: 1 }); // Adjust callerId accordingly
+    });
+
+    socket.on('video call offer', handleOffer);
+    socket.on('video call answer', handleAnswer);
+    socket.on('video call ice-candidate', handleIceCandidate);
+    socket.on('video call accepted', () => {
+      acceptCallButton.disabled = true;
+      declineCallButton.disabled = true;
+    });
+    socket.on('video call declined', () => {
+      acceptCallButton.disabled = true;
+      declineCallButton.disabled = true;
+    });
+  </script>
 </body>
 </html>
+
