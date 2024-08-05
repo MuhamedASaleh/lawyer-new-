@@ -672,6 +672,8 @@ exports.getLawyerCaseCountsByMonth = asyncHandler(async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
 exports.updateCaseStatus = asyncHandler(async (req, res) => {
   const { caseId } = req.params;
   const { status } = req.body;
@@ -683,15 +685,17 @@ exports.updateCaseStatus = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
+  console.log(now);
+
   let statusHistory = caseToUpdate.statusHistory || [];
 
   // Update end time for the current status
   if (statusHistory.length > 0) {
     statusHistory[statusHistory.length - 1].end = now;
   }
-
+ const storyTime = { status, start: now, end: null }
   // Add the new status with start time
-  statusHistory.push({ status, start: now, end: null });
+  statusHistory.push(storyTime);
 
   caseToUpdate.status = status;
   caseToUpdate.statusHistory = statusHistory;
@@ -703,8 +707,8 @@ exports.updateCaseStatus = asyncHandler(async (req, res) => {
 
   await caseToUpdate.save();
 
-  console.log('Updated case:', caseToUpdate); // Log for debugging
-
+  console.log('Updated case:', caseToUpdate.statusHistory); // Log for debugging
+  
   res.status(200).json(caseToUpdate);
 });
 
