@@ -5,6 +5,33 @@ const User = require('../models/userModel.js');
 const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
 // const userValidator = require('../Validations/userValidator');
 
+const specializationsList = [
+  'Criminal Law',
+  'Civil Law',
+  'Commercial Law',
+  'Family Law',
+  'International Law',
+  'Labor Law',
+  'Intellectual Property Law',
+  'Corporate Law',
+  'Administrative Law',
+  'Constitutional Law',
+  'Tax Law',
+  'Environmental Law'
+];
+
+// Get all specializations
+exports.getAllSpecializations = async (req, res) => {
+  try {
+    res.json({ specializations: specializationsList });
+  } catch (error) {
+    console.error('Error fetching specializations:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
 exports.registerUser = async (req, res) => {
   try {
     const {
@@ -15,12 +42,20 @@ exports.registerUser = async (req, res) => {
       password,
       confirm_password,
       national_number,
-      specializations,
       certification
     } = req.body;
 
+    // Parse the specializations field
+    const specializations = JSON.parse(req.body.specializations);
+
     if (password !== confirm_password) {
       return res.status(400).json({ error: "Passwords don't match" });
+    }
+
+    // Validate specializations
+    const isValidSpecializations = specializations.every(spec => specializationsList.includes(spec));
+    if (!isValidSpecializations) {
+      return res.status(400).json({ error: 'Invalid specializations' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

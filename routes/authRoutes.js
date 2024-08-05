@@ -9,6 +9,7 @@ const { Auth, AuthorizeRole } = require('../middleware/auth');
 router.post('/register', upload,authController.registerUser);
 router.post('/login', authController.loginUser);
 router.put('/status/:userId', Auth, AuthorizeRole('admin'), authController.updateUserStatus);
+router.get('/specializations', authController.getAllSpecializations);
 
 
 module.exports = router;

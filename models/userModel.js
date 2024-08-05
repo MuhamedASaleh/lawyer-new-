@@ -51,22 +51,10 @@ const User = sequelize.define('User', {
 //             max: 5
 //         }
 //   },
-  specializations: {
-    type: DataTypes.ENUM(
-      'Criminal Law',
-      'Civil Law',
-      'Commercial Law',
-      'Family Law',
-      'International Law',
-      'Labor Law',
-      'Intellectual Property Law',
-      'Corporate Law',
-      'Administrative Law',
-      'Constitutional Law',
-      'Tax Law',
-      'Environmental Law'
-    ),
+specializations: {
+    type: DataTypes.JSON, // Store as JSON array
     allowNull: true,
+    defaultValue: []
   },
   certification: {
     type: DataTypes.STRING,
