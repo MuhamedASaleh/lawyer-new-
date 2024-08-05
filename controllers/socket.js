@@ -4,26 +4,28 @@ exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
 
-        // Add user to onlineUsers array
-        socket.on('add-user', (userId) => {
-            onlineUsers.push({ socketId: socket.id, userId });
-            io.emit('update-online-users', { onlineUsers });
-        });
+         // Handle new user
+    socket.on('new-user', (data) => {
+        onlineUsers[socket.id] = { userId: data.userId };
+        io.emit('update-online-users', { onlineUsers });
+    });
 
+    // Join private room
+    socket.on('joinRoom', ({ callerId, calleeId }) => {
+        const caller = Object.values(onlineUsers).find(user => user.userId === callerId);
+        const callee = Object.values(onlineUsers).find(user => user.userId === calleeId);
 
-        // Join private room
-        socket.on('joinRoom', ({ roomId, callerId, calleeId }) => {
-            const caller = onlineUsers.find(user => user.userId === callerId);
-            const callee = onlineUsers.find(user => user.userId === calleeId);
-            if (caller && callee) {
-                socket.join(roomId);
-                io.to(caller.socketId).emit('join-room', { roomId, callerId, calleeId });
-                io.to(callee.socketId).emit('join-room', { roomId, callerId, calleeId });
-                io.to(roomId).emit('new-user', { callerId, calleeId });
-            } else {
-                console.log('Caller or Callee not found');
-            }
-        });
+        if (caller && callee) {
+            const roomId = uuidv4(); // Generate unique room ID
+            socket.join(roomId);
+            io.to(caller.socketId).emit('join-room', { roomId, callerId, calleeId });
+            io.to(callee.socketId).emit('join-room', { roomId, callerId, calleeId });
+            io.to(roomId).emit('new-user', { callerId, calleeId });
+            console.log(`Room created: ${roomId}`);
+        } else {
+            console.log('Caller or Callee not found');
+        }
+    });
 
         // WebRTC signaling for voice and video calls
         socket.on('offer', (data) => {
