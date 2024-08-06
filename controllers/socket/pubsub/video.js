@@ -16,7 +16,7 @@ const video = (socket, io) => {
     }
   });
 
-  socket.on('videoChatOffer', ({ sdp }) => {
+  socket.on('offer', ({ sdp }) => {
     if (socket.id === clientCaller.socketID) {
       io.to(clientCallee.socketID).emit('getVideoChatOffer', sdp);
     }
@@ -26,7 +26,7 @@ const video = (socket, io) => {
     io.to(clientCaller.socketID).emit('getVideoChatAnswer', sdp);
   });
 
-  socket.on('candidate', ({ candidate }) => {
+  socket.on('ice-candidate', ({ candidate }) => {
     if (socket.id === clientCaller.socketID) {
       io.to(clientCallee.socketID).emit('getCandidate', candidate);
     } else {
