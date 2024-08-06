@@ -296,125 +296,105 @@
  -->
 
 
-
  <!DOCTYPE html>
- <html>
+ <html lang="en">
  <head>
-     <title>Socket.io Video Call Simulation</title>
-     <style>
-         #userList {
-             list-style-type: none;
-             padding: 0;
-         }
-         #userList li {
-             margin: 5px 0;
-             display: flex;
-             align-items: center;
-         }
-         #userList .video-icon {
-             cursor: pointer;
-             margin-left: 10px;
-         }
-     </style>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Socket.io Video Chat</title>
+   <style>
+     body { font-family: Arial, sans-serif; }
+     #video-container { display: flex; }
+     video { width: 300px; height: 200px; margin: 10px; }
+     #controls { margin-top: 20px; }
+   </style>
  </head>
  <body>
-     <h1>Socket.io Video Call Simulation</h1>
-     <ul id="userList"></ul>
+   <h1>Socket.io Video Chat</h1>
+   <div id="video-container">
+     <video id="local-video" autoplay muted></video>
+     <video id="remote-video" autoplay></video>
+   </div>
+   <div id="controls">
+     <input type="text" id="userId" placeholder="Enter your user ID">
+     <button id="join-room">Join Room</button>
+     <button id="leave-room">Leave Room</button>
+     <div id="status"></div>
+   </div>
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+     const socket = io();
  
-     <h2>Start a Video Call</h2>
-     <label for="callerId">Caller ID:</label>
-     <input type="text" id="callerId" placeholder="Enter caller ID">
-     <br>
-     <label for="calleeId">Callee ID:</label>
-     <input type="text" id="calleeId" placeholder="Enter callee ID">
-     <br>
-     <button id="startCall">Start Video Call</button>
+     let localStream;
+     let peerConnection;
+     const servers = {
+       iceServers: [
+         { urls: 'stun:stun.l.google.com:19302' }
+       ]
+     };
  
-     <button id="simulateConnection">Simulate User Connection</button>
-     <button id="simulateDisconnection">Simulate User Disconnection</button>
-     
-     <script src="/socket.io/socket.io.js"></script>
-     <script>
-         const socket = io();
-         const userList = document.getElementById('userList');
-         const startCallButton = document.getElementById('startCall');
-         const callerIdInput = document.getElementById('callerId');
-         const calleeIdInput = document.getElementById('calleeId');
-         let currentUserId = null;
+     document.getElementById('join-room').addEventListener('click', () => {
+       const userId = document.getElementById('userId').value;
+       if (userId) {
+         socket.emit('joinRoom', userId);
+       } else {
+         alert('Please enter your user ID');
+       }
+     });
  
-         // Update the list of online users
-         function updateUserList(users) {
-             userList.innerHTML = '';
-             Object.keys(users).forEach(socketId => {
-                 const user = users[socketId];
-                 const li = document.createElement('li');
-                 li.textContent = `User ID: ${user.userId}, Socket ID: ${socketId}`;
-                 
-                 // Create a video call icon
-                 const videoIcon = document.createElement('img');
-                 videoIcon.src = 'video-call-icon.png'; // Replace with your video call icon path
-                 videoIcon.className = 'video-icon';
-                 videoIcon.onclick = () => startVideoCall(user.userId);
-                 
-                 li.appendChild(videoIcon);
-                 userList.appendChild(li);
-             });
+     document.getElementById('leave-room').addEventListener('click', () => {
+       socket.emit('disconnect');
+       peerConnection.close();
+       localStream.getTracks().forEach(track => track.stop());
+     });
+ 
+     socket.on('userWaiting', message => {
+       document.getElementById('status').textContent = message;
+     });
+ 
+     socket.on('roomReady', async message => {
+       document.getElementById('status').textContent = message;
+       await setupPeerConnection();
+     });
+ 
+     socket.on('getVideoChatOffer', async sdp => {
+       await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+       const answer = await peerConnection.createAnswer();
+       await peerConnection.setLocalDescription(answer);
+       socket.emit('videoChatAnswer', { sdp: answer });
+     });
+ 
+     socket.on('getVideoChatAnswer', sdp => {
+       peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+     });
+ 
+     socket.on('getCandidate', candidate => {
+       peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+     });
+ 
+     async function setupPeerConnection() {
+       peerConnection = new RTCPeerConnection(servers);
+       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+ 
+       document.getElementById('local-video').srcObject = localStream;
+ 
+       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+ 
+       peerConnection.ontrack = event => {
+         document.getElementById('remote-video').srcObject = event.streams[0];
+       };
+ 
+       peerConnection.onicecandidate = event => {
+         if (event.candidate) {
+           socket.emit('candidate', { candidate: event.candidate });
          }
+       };
  
-         // Start a video call
-         function startVideoCall(calleeId) {
-             if (currentUserId) {
-                 socket.emit('joinRoom', { callerId: currentUserId, calleeId });
-             }
-         }
- 
-         // Handle new user connections
-         socket.on('update-online-users', (data) => {
-             console.log('Online users updated:', data.onlineUsers);
-             updateUserList(data.onlineUsers);
-         });
- 
-         // Handle user disconnection
-         socket.on('user-disconnected', (data) => {
-             console.log('User disconnected:', data.userId);
-             // Optionally update the UI to reflect the disconnection
-         });
- 
-         // Handle room joining and end call notifications
-         socket.on('join-room', (data) => {
-             console.log('Joined room:', data);
-         });
- 
-         socket.on('end-call-notification', () => {
-             console.log('Call ended');
-         });
- 
-         // Start video call when button is clicked
-         startCallButton.onclick = () => {
-             const callerId = callerIdInput.value.trim();
-             const calleeId = calleeIdInput.value.trim();
-             if (callerId && calleeId) {
-                 socket.emit('joinRoom', { callerId, calleeId });
-             } else {
-                 alert('Please enter both Caller ID and Callee ID');
-             }
-         };
- 
-         // Simulate new user connection
-         document.getElementById('simulateConnection').onclick = () => {
-             if (currentUserId === null) {
-                 currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
-                 socket.emit('new-user', { userId: currentUserId });
-             }
-         };
- 
-         // Simulate user disconnection
-         document.getElementById('simulateDisconnection').onclick = () => {
-             socket.disconnect();
-             currentUserId = null;
-         };
-     </script>
+       const offer = await peerConnection.createOffer();
+       await peerConnection.setLocalDescription(offer);
+       socket.emit('videoChatOffer', { sdp: offer });
+     }
+   </script>
  </body>
  </html>
- 
  
