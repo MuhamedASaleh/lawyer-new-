@@ -7,6 +7,85 @@ const asyncHandler = require(`express-async-handler`);
 const {Review, Case} = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
 
+exports.getLawyersBySort = async (req, res) => {
+  const { page = 1, limit = 10, sort = 'top', specialization } = req.query;
+
+  const offset = (page - 1) * limit;
+
+  const where = {
+    role: 'lawyer'
+  };
+
+  if (specialization) {
+    where.specializations = {
+      [Op.contains]: [specialization]
+    };
+  }
+
+  const order = sort === 'top'
+    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
+    : sort === 'low'
+    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
+    : []; // Default order (if needed, otherwise empty)
+
+  try {
+    const { count, rows } = await User.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Review,
+          as: 'LawyerReviews',
+          attributes: ['rating'] // Include only the rating in the subquery
+        }
+      ],
+      limit,
+      offset,
+      order
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
+      total: count,
+      totalPages,
+      currentPage: page,
+      results: rows.map(user => {
+        // Calculate average rating
+        const averageRating = user.LawyerReviews.reduce((sum, review) => sum + review.rating, 0) / user.LawyerReviews.length || 0;
+
+        return {
+          id: user.userID,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phoneNumber: user.phone_number,
+          personalImage: user.personal_image,
+          averageRating,
+          // Include all other user attributes
+          role: user.role,
+          nationalNumber: user.national_number,
+          lawyerPrice: user.lawyer_price,
+          specializations: user.specializations,
+          certification: user.certification,
+          description: user.description,
+          status: user.status,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
+      })
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: {
+        statusCode: 500,
+        status: 'error'
+      },
+      message: error.message,
+      stack: error.stack
+    });
+  }
+};
+
 exports.getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;  
   const user = await User.findByPk(id);
@@ -633,3 +712,4 @@ exports.getCustomerCountsByMonth = async (req, res) => {
     res.status(500).json({ message: 'Server error', details: error.message });
   }
 };
+
