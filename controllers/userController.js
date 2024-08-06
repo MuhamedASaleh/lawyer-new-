@@ -8,7 +8,7 @@ const {Review, Case} = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
 
 exports.getLawyersBySort = async (req, res) => {
-  const { page = 1, limit = 10, sort = 'rating', specialization } = req.query;
+  const { page = 1, limit = 10, sort = 'top', specialization } = req.query;
 
   const offset = (page - 1) * limit;
 
@@ -22,11 +22,11 @@ exports.getLawyersBySort = async (req, res) => {
     };
   }
 
-  const order = sort === 'rating'
-    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']]
-    : sort === 'lowRating'
-    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']]
-    : [];
+  const order = sort === 'top'
+    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
+    : sort === 'low'
+    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
+    : []; // Default order (if needed, otherwise empty)
 
   try {
     const { count, rows } = await User.findAndCountAll({
