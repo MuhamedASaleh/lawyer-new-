@@ -9,16 +9,17 @@ const sequelize = require('../config/dbConfig');
 
 exports.createCase = async (req, res) => { 
   try {
-    console.log(req.user.id)
     const { judge_name, lawyer_fees, court_fees } = req.body;
+    const now = new Date();
 
     const newCase = await Case.create({
       judge_name,
       lawyer_fees,
       court_fees,
       status: 'pending',
+      statusHistory: [{ status: 'pending', start: now, end: null }],
       lawyerId: req.user.id,
-      customerId: req.user.id, // here we should do somthing to modify that the custmor send file to get his id 
+      customerId: req.user.id // Modify this as needed to get the correct customer ID
     });
 
     const caseWithDetails = await Case.findByPk(newCase.caseID);
@@ -27,6 +28,7 @@ exports.createCase = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.getCaseDetails = async (req, res) => {
   try {
@@ -748,30 +750,23 @@ exports.updateCaseStatus = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
-  console.log(now);
 
   let statusHistory = caseToUpdate.statusHistory || [];
 
-  // Update end time for the current status
-  if (statusHistory.length > 0) {
+  // Update end time for the current status if it has no end time yet
+  if (statusHistory.length > 0 && !statusHistory[statusHistory.length - 1].end) {
     statusHistory[statusHistory.length - 1].end = now;
   }
- const storyTime = { status, start: now, end: null }
+
   // Add the new status with start time
-  statusHistory.push(storyTime);
+  const newStatusEntry = { status, start: now, end: null };
+  statusHistory.push(newStatusEntry);
 
   caseToUpdate.status = status;
   caseToUpdate.statusHistory = statusHistory;
 
-  if (status === 'declined') {
-    await caseToUpdate.destroy();
-    return res.status(200).json({ message: 'Case declined and deleted successfully' });
-  }
-
   await caseToUpdate.save();
 
-  console.log('Updated case:', caseToUpdate.statusHistory); // Log for debugging
-  
   res.status(200).json(caseToUpdate);
 });
 

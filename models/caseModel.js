@@ -24,9 +24,9 @@ const Case = sequelize.define('case', {
     defaultValue: 'pending'
   },
   statusHistory: {
-    type: DataTypes.JSON, // Use JSON type to store array of objects
+    type: DataTypes.JSON,
     allowNull: false,
-    defaultValue: [] // Default to an empty array
+    defaultValue: [] // Initialize with an empty array
   },
   customer_files: {
     type: DataTypes.BLOB,

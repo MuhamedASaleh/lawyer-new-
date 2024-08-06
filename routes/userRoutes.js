@@ -8,11 +8,10 @@ const { Auth, AuthorizeRole } = require('../middleware/auth')
 //routes
 
 // Route to get the count of lawyers
-
+router.get('/lawyerBySort', userController.getLawyersBySort);
 router.get('/lawyerCount', Auth, userController.getLawyerCount);
 router.get('/lawyer-counts',Auth, userController.getLawyerCountsByMonth);
 router.get('/customer-counts',Auth, userController.getCustomerCountsByMonth);
-
 
 
 //Existing 

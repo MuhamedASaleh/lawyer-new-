@@ -24,8 +24,6 @@ router.post('/create', Auth, AuthorizeRole('lawyer'), createCase);
 // Route to get case details
 router.get('/:caseId/details', getCaseDetails);
 
-// Route to update case status to accepted (for customers only)
-router.put('/:caseId/updateStatus', updateCaseStatus);
 
 // Route to update customer files (for customers only)
 router.put('/:caseId',upload ,  updateCustomerFiles);
@@ -59,5 +57,8 @@ router.get('/lawyer-case-counts/:id', Auth, getLawyerCaseCountsByMonth);
 
 // Get the status history of a case
 router.get('/:caseId/status-history', getCaseStatusHistory);
+// Route to update case status to accepted (for customers only)
+router.put('/:caseId/updateStatus', updateCaseStatus);
+
 
 module.exports = router;
