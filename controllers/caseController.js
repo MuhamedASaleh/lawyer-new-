@@ -101,6 +101,9 @@ exports.updateCustomerFiles = (
 
 
     const caseToUpdate = await Case.findByPk(caseId);
+    console.log('======================================================')
+    console.log(caseToUpdate)
+    console.log('======================================================')
     if (!caseToUpdate) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -145,7 +148,6 @@ exports.updateCustomerFiles = (
       }
     };
     
-    console.log('=============================================== 112')
     try {
       const response = await axios.request(options);
       res.status(200).json({

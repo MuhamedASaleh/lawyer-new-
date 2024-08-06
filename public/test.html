@@ -229,159 +229,192 @@
  </body>
  </html>
    -->
-   <!DOCTYPE html>
-<html lang="en">
+ 
+
+
+   <!-- <!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Socket.io Video Call Test</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-    }
-    #video-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      flex-direction: column;
-    }
-    video {
-      width: 300px;
-      height: 200px;
-      border: 1px solid #ddd;
-      margin: 10px;
-    }
-  </style>
+    <title>Socket.io User Presence</title>
+    <style>
+        #userList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #userList li {
+            margin: 5px 0;
+        }
+    </style>
 </head>
 <body>
-  <div id="video-container">
-    <h1>Video Call Test</h1>
-    <video id="local-video" autoplay muted></video>
-    <video id="remote-video" autoplay></video>
-    <button id="start-call">Start Call</button>
-    <button id="end-call" disabled>End Call</button>
-    <button id="accept-call" disabled>Accept Call</button>
-    <button id="decline-call" disabled>Decline Call</button>
-  </div>
+    <h1>Online Users</h1>
+    <ul id="userList"></ul>
+    <button id="simulateConnection">Simulate User Connection</button>
+    <button id="simulateDisconnection">Simulate User Disconnection</button>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const userList = document.getElementById('userList');
+        
+        // Update the list of online users
+        function updateUserList(users) {
+            userList.innerHTML = '';
+            Object.values(users).forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = `User ID: ${user.userId}`;
+                userList.appendChild(li);
+            });
+        }
 
-  <script>
-    const socket = io();
-    let localStream;
-    let peerConnection;
-    const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        // Handle new user connections
+        socket.on('update-online-users', (data) => {
+            console.log('Online users updated:', data.onlineUsers);
+            updateUserList(data.onlineUsers);
+        });
 
-    const localVideo = document.getElementById('local-video');
-    const remoteVideo = document.getElementById('remote-video');
-    const startCallButton = document.getElementById('start-call');
-    const endCallButton = document.getElementById('end-call');
-    const acceptCallButton = document.getElementById('accept-call');
-    const declineCallButton = document.getElementById('decline-call');
+        // Handle user disconnection
+        socket.on('user-disconnected', (data) => {
+            console.log('User disconnected:', data.userId);
+            // Optionally update the UI to reflect the disconnection
+        });
 
-    async function initLocalStream() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
-      } catch (err) {
-        console.error('Error accessing media devices.', err);
-      }
-    }
+        // Simulate new user connection
+        document.getElementById('simulateConnection').onclick = () => {
+            // Replace with actual user ID or simulate with a random one
+            socket.emit('new-user', { userId: 'user_' + Math.random().toString(36).substr(2, 9) });
+        };
 
-    function handleNegotiationNeeded(event) {
-      peerConnection.createOffer().then(offer => {
-        return peerConnection.setLocalDescription(offer);
-      }).then(() => {
-        socket.emit('video call offer', peerConnection.localDescription);
-      }).catch(err => console.error('Offer creation failed:', err));
-    }
-
-    function handleTrackEvent(event) {
-      remoteVideo.srcObject = event.streams[0];
-    }
-
-    function handleIceCandidate(event) {
-      if (event.candidate) {
-        socket.emit('video call ice-candidate', event.candidate);
-      }
-    }
-
-    function handleOffer(offer) {
-      peerConnection = new RTCPeerConnection(configuration);
-      peerConnection.ontrack = handleTrackEvent;
-      peerConnection.onicecandidate = handleIceCandidate;
-      peerConnection.addStream(localStream);
-
-      peerConnection.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
-        return peerConnection.createAnswer();
-      }).then(answer => {
-        return peerConnection.setLocalDescription(answer);
-      }).then(() => {
-        socket.emit('video call answer', peerConnection.localDescription);
-      }).catch(err => console.error('Answer creation failed:', err));
-    }
-
-    function handleAnswer(answer) {
-      peerConnection.setRemoteDescription(new RTCSessionDescription(answer)).catch(err => console.error('Failed to set remote description:', err));
-    }
-
-    function handleIceCandidate(iceCandidate) {
-      peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(err => console.error('Failed to add ice candidate:', err));
-    }
-
-    function handleCallEnd() {
-      if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-        remoteVideo.srcObject = null;
-      }
-    }
-
-    startCallButton.addEventListener('click', () => {
-      initLocalStream().then(() => {
-        peerConnection = new RTCPeerConnection(configuration);
-        peerConnection.ontrack = handleTrackEvent;
-        peerConnection.onicecandidate = handleIceCandidate;
-        peerConnection.addStream(localStream);
-
-        peerConnection.createOffer().then(offer => {
-          return peerConnection.setLocalDescription(offer);
-        }).then(() => {
-          socket.emit('start video call', { receiverId: 2 }); // Adjust receiverId accordingly
-        }).catch(err => console.error('Offer creation failed:', err));
-
-        startCallButton.disabled = true;
-        endCallButton.disabled = false;
-      });
-    });
-
-    endCallButton.addEventListener('click', () => {
-      socket.emit('end video call', { roomId: '1-2' }); // Adjust roomId accordingly
-      handleCallEnd();
-      startCallButton.disabled = false;
-      endCallButton.disabled = true;
-    });
-
-    acceptCallButton.addEventListener('click', () => {
-      socket.emit('accept video call', { callerId: 1 }); // Adjust callerId accordingly
-    });
-
-    declineCallButton.addEventListener('click', () => {
-      socket.emit('decline video call', { callerId: 1 }); // Adjust callerId accordingly
-    });
-
-    socket.on('video call offer', handleOffer);
-    socket.on('video call answer', handleAnswer);
-    socket.on('video call ice-candidate', handleIceCandidate);
-    socket.on('video call accepted', () => {
-      acceptCallButton.disabled = true;
-      declineCallButton.disabled = true;
-    });
-    socket.on('video call declined', () => {
-      acceptCallButton.disabled = true;
-      declineCallButton.disabled = true;
-    });
-  </script>
+        // Simulate user disconnection
+        document.getElementById('simulateDisconnection').onclick = () => {
+            // Emit a disconnect event manually for testing purposes
+            socket.disconnect();
+        };
+    </script>
 </body>
 </html>
+ -->
 
+
+
+ <!DOCTYPE html>
+ <html>
+ <head>
+     <title>Socket.io Video Call Simulation</title>
+     <style>
+         #userList {
+             list-style-type: none;
+             padding: 0;
+         }
+         #userList li {
+             margin: 5px 0;
+             display: flex;
+             align-items: center;
+         }
+         #userList .video-icon {
+             cursor: pointer;
+             margin-left: 10px;
+         }
+     </style>
+ </head>
+ <body>
+     <h1>Socket.io Video Call Simulation</h1>
+     <ul id="userList"></ul>
+ 
+     <h2>Start a Video Call</h2>
+     <label for="callerId">Caller ID:</label>
+     <input type="text" id="callerId" placeholder="Enter caller ID">
+     <br>
+     <label for="calleeId">Callee ID:</label>
+     <input type="text" id="calleeId" placeholder="Enter callee ID">
+     <br>
+     <button id="startCall">Start Video Call</button>
+ 
+     <button id="simulateConnection">Simulate User Connection</button>
+     <button id="simulateDisconnection">Simulate User Disconnection</button>
+     
+     <script src="/socket.io/socket.io.js"></script>
+     <script>
+         const socket = io();
+         const userList = document.getElementById('userList');
+         const startCallButton = document.getElementById('startCall');
+         const callerIdInput = document.getElementById('callerId');
+         const calleeIdInput = document.getElementById('calleeId');
+         let currentUserId = null;
+ 
+         // Update the list of online users
+         function updateUserList(users) {
+             userList.innerHTML = '';
+             Object.keys(users).forEach(socketId => {
+                 const user = users[socketId];
+                 const li = document.createElement('li');
+                 li.textContent = `User ID: ${user.userId}, Socket ID: ${socketId}`;
+                 
+                 // Create a video call icon
+                 const videoIcon = document.createElement('img');
+                 videoIcon.src = 'video-call-icon.png'; // Replace with your video call icon path
+                 videoIcon.className = 'video-icon';
+                 videoIcon.onclick = () => startVideoCall(user.userId);
+                 
+                 li.appendChild(videoIcon);
+                 userList.appendChild(li);
+             });
+         }
+ 
+         // Start a video call
+         function startVideoCall(calleeId) {
+             if (currentUserId) {
+                 socket.emit('joinRoom', { callerId: currentUserId, calleeId });
+             }
+         }
+ 
+         // Handle new user connections
+         socket.on('update-online-users', (data) => {
+             console.log('Online users updated:', data.onlineUsers);
+             updateUserList(data.onlineUsers);
+         });
+ 
+         // Handle user disconnection
+         socket.on('user-disconnected', (data) => {
+             console.log('User disconnected:', data.userId);
+             // Optionally update the UI to reflect the disconnection
+         });
+ 
+         // Handle room joining and end call notifications
+         socket.on('join-room', (data) => {
+             console.log('Joined room:', data);
+         });
+ 
+         socket.on('end-call-notification', () => {
+             console.log('Call ended');
+         });
+ 
+         // Start video call when button is clicked
+         startCallButton.onclick = () => {
+             const callerId = callerIdInput.value.trim();
+             const calleeId = calleeIdInput.value.trim();
+             if (callerId && calleeId) {
+                 socket.emit('joinRoom', { callerId, calleeId });
+             } else {
+                 alert('Please enter both Caller ID and Callee ID');
+             }
+         };
+ 
+         // Simulate new user connection
+         document.getElementById('simulateConnection').onclick = () => {
+             if (currentUserId === null) {
+                 currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+                 socket.emit('new-user', { userId: currentUserId });
+             }
+         };
+ 
+         // Simulate user disconnection
+         document.getElementById('simulateDisconnection').onclick = () => {
+             socket.disconnect();
+             currentUserId = null;
+         };
+     </script>
+ </body>
+ </html>
+ 
+ 
