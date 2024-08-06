@@ -20,6 +20,7 @@ const errorMiddleWare = require('./middleware/errorMiddleWare');
 dotenv.config({ path: '.env' });
 
 const app = express();
+
 const server = http.createServer(app);
 const io = socketIo(server);
 
@@ -48,7 +49,7 @@ app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
-const {handleSocketConnection} = require('./controllers/socketController')
+const {handleSocketConnection} = require('./controllers/socket')
 handleSocketConnection(io)
 // Sync database and start server
 sequelize.sync({ force: false })  

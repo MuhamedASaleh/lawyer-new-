@@ -28,7 +28,7 @@ exports.getAllSpecializations = async (req, res) => {
     console.error('Error fetching specializations:', error);
     res.status(500).json({ error: error.message });
   }
-};
+}; 
 
 
 
