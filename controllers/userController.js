@@ -86,6 +86,73 @@ exports.getLawyersBySort = asyncHandler(async (req, res) => {
     });
   }
 });
+exports.getLawyersByStatusAccept = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Validate page and limit
+    if (isNaN(pageNumber) || pageNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid page parameter' });
+    }
+
+    if (isNaN(limitNumber) || limitNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid limit parameter' });
+    }
+
+    // Calculate offset
+    const offset = (pageNumber - 1) * limitNumber;
+
+    // console.log('Offset:', offset); // Debugging log
+
+    // Find all lawyers with status 'accept'
+    const { count, rows } = await User.findAndCountAll({
+      where: {
+        role: 'lawyer',
+        status: 'accept'
+      },
+      include: [{
+        model: Review,
+        as: 'LawyerReviews', // Use the correct alias
+        attributes: ['rating']
+      }],
+      limit: limitNumber,
+      offset
+    });
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No lawyers with status "accept" found' });
+    }
+
+    // console.log('Lawyers found:', rows.length); // Debugging log
+
+    // Calculate the average rating for each lawyer
+    const lawyers = rows.map(lawyer => {
+      const totalRatings = lawyer.LawyerReviews.reduce((sum, review) => sum + review.rating, 0); // Use the correct alias
+      const countReviews = lawyer.LawyerReviews.length; // Use the correct alias
+      const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
+
+      return {
+        ...lawyer.toJSON(),
+        averageRating,
+      };
+    });
+
+    res.json({
+      total: count,
+      totalPages: Math.ceil(count / limitNumber),
+      currentPage: pageNumber,
+      limit: limitNumber,
+      lawyers
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
 exports.getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;  
   const user = await User.findByPk(id);
@@ -405,73 +472,7 @@ exports.getAllCustomers = async (req, res) => {
 
 // Function to get all lawyers with status 'accept'
 
-exports.getLawyersByStatusAccept = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
 
-    // Convert page and limit to integers
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-
-    // Validate page and limit
-    if (isNaN(pageNumber) || pageNumber <= 0) {
-      return res.status(400).json({ error: 'Invalid page parameter' });
-    }
-
-    if (isNaN(limitNumber) || limitNumber <= 0) {
-      return res.status(400).json({ error: 'Invalid limit parameter' });
-    }
-
-    // Calculate offset
-    const offset = (pageNumber - 1) * limitNumber;
-
-    // console.log('Offset:', offset); // Debugging log
-
-    // Find all lawyers with status 'accept'
-    const { count, rows } = await User.findAndCountAll({
-      where: {
-        role: 'lawyer',
-        status: 'accept'
-      },
-      include: [{
-        model: Review,
-        as: 'LawyerReviews', // Use the correct alias
-        attributes: ['rating']
-      }],
-      limit: limitNumber,
-      offset
-    });
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No lawyers with status "accept" found' });
-    }
-
-    // console.log('Lawyers found:', rows.length); // Debugging log
-
-    // Calculate the average rating for each lawyer
-    const lawyers = rows.map(lawyer => {
-      const totalRatings = lawyer.LawyerReviews.reduce((sum, review) => sum + review.rating, 0); // Use the correct alias
-      const countReviews = lawyer.LawyerReviews.length; // Use the correct alias
-      const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
-
-      return {
-        ...lawyer.toJSON(),
-        averageRating,
-      };
-    });
-
-    res.json({
-      total: count,
-      totalPages: Math.ceil(count / limitNumber),
-      currentPage: pageNumber,
-      limit: limitNumber,
-      lawyers
-    });
-  } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
 // Function to get all lawyers with status 'pending'
 exports.getLawyersByStatusPending = async (req, res) => {
   try {
