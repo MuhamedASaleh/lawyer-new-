@@ -1,4 +1,4 @@
-// const { Room, User } = require('../models');
+const { Room } = require('../../../models/Room');
 
 const createRoom = async () => {
   try {
