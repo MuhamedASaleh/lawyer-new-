@@ -7,13 +7,14 @@ const asyncHandler = require(`express-async-handler`);
 const {Review, Case} = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
 
-exports.getLawyersBySort = async (req, res) => {
+exports.getLawyersBySort = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, sort = 'top', specialization } = req.query;
 
   const offset = (page - 1) * limit;
 
   const where = {
-    role: 'lawyer'
+    role: 'lawyer',
+    status: 'accept' // Filter only accepted lawyers
   };
 
   if (specialization) {
@@ -84,8 +85,7 @@ exports.getLawyersBySort = async (req, res) => {
       stack: error.stack
     });
   }
-};
-
+});
 exports.getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;  
   const user = await User.findByPk(id);
