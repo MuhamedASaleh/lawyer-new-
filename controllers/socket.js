@@ -3,9 +3,6 @@
 
 const user = require('./socket/pubsub/users')
 const video = require('./socket/pubsub/video')
-const onlineUsers = {}; // Object to store online users
-const activeRooms = {}; // Object to store active rooms
-
 exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
@@ -16,8 +13,5 @@ exports.handleSocketConnection = function (io) {
         socket.on('disconnect', () => {
             console.log('User disconnected');
         });
-
-
-
     });
 };
