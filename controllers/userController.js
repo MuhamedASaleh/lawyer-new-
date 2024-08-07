@@ -2,159 +2,295 @@
 // const { Sequelize, Op, fn, col, literal } = require('sequelize');
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
-const { Op, fn, col, literal } = require('sequelize');
+const { Sequelize , Op, fn, col, literal } = require('sequelize');
 const asyncHandler = require(`express-async-handler`);
-const {Review, Case} = require('../Associations/associations');
+const { Review, Case } = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
 
-exports.getLawyersBySort = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, sort = 'top', specialization } = req.query;
+// exports.getLawyersBySort = asyncHandler(async (req, res) => {
+//   const { specializations } = req.query; // Assume this is a comma-separated string like 'Criminal Law,Corporate Law'
+//   const page = parseInt(req.query.page) || 1;
+//   const limit = parseInt(req.query.limit) || 10;
+//   const sort = req.query.sort || "DESC";
+//   const offset = (page - 1) * limit;
 
-  const offset = (page - 1) * limit;
+ 
+//   const where = {};
+//   if (specializations) {
+//     // Convert comma-separated string to an array
+//     const specializationArray = specializations.split(',');
+//     where.specializations = {
+//       [Op.and]: specializationArray.map(spec => Sequelize.literal(`JSON_CONTAINS(specializations, '["${spec}"]')`))
+//     };
+//   }
 
+//   const { count, rows } = await User.findAndCountAll({
+//     where,
+//     include: [
+//             {
+//               model: Review, 
+//               as: 'LawyerReviews',
+//               attributes: ['rating'] // Include only the rating in the subquery
+//             }
+//           ],
+//     limit,
+//     offset,
+//     order: [['createdAt', sort]]
+//   });
+
+//   res.json({
+//     totalRecords: count,
+//     totalPages: Math.ceil(count / limit),
+//     currentPage: page,
+//     users: rows
+//   });
+
+//   // const where = {
+//   //   role: 'lawyer',
+//   //   status: 'accept' // Filter only accepted lawyers
+//   // };
+
+//   // if (specialization) {
+//   //   where.specializations = {
+//   //     [Op.contains]: [specialization]
+//   //   };
+//   // }
+
+//   // const order = sort === 'top'
+//   //   ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
+//   //   : sort === 'low'
+//   //   ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
+//   //   : []; // Default order (if needed, otherwise empty)
+
+//   // try {
+//   //   const { count, rows } = await User.findAndCountAll({
+//   //     where,
+//   //     include: [
+//   //       {
+//   //         model: Review,
+//   //         as: 'LawyerReviews',
+//   //         attributes: ['rating'] // Include only the rating in the subquery
+//   //       }
+//   //     ],
+//   //     limit,
+//   //     offset,
+//   //     order
+//   //   });
+
+//   //   const totalPages = Math.ceil(count / limit);
+
+//   //   res.status(200).json({
+//   //     total: count,
+//   //     totalPages,
+//   //     currentPage: page,
+//   //     results: rows.map(user => {
+//   //       // Calculate average rating
+//   //       const averageRating = user.LawyerReviews.reduce((sum, review) => sum + review.rating, 0) / user.LawyerReviews.length || 0;
+
+//   //       return {
+//   //         id: user.userID,
+//   //         firstName: user.first_name,
+//   //         lastName: user.last_name,
+//   //         phoneNumber: user.phone_number,
+//   //         personalImage: user.personal_image,
+//   //         averageRating,
+//   //         // Include all other user attributes
+//   //         role: user.role,
+//   //         nationalNumber: user.national_number,
+//   //         lawyerPrice: user.lawyer_price,
+//   //         specializations: user.specializations,
+//   //         certification: user.certification,
+//   //         description: user.description,
+//   //         status: user.status,
+//   //         createdAt: user.createdAt,
+//   //         updatedAt: user.updatedAt
+//   //       };
+//   //     })
+//   //   });
+//   // } catch (error) {
+//   //   res.status(500).json({
+//   //     status: 'error',
+//   //     error: {
+//   //       statusCode: 500,
+//   //       status: 'error'
+//   //     },
+//   //     message: error.message,
+//   //     stack: error.stack
+//   //   });
+//   // }
+// });
+// exports.getLawyersByStatusAccept = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10 } = req.query;
+
+//     // Convert page and limit to integers
+//     const pageNumber = parseInt(page, 10);
+//     const limitNumber = parseInt(limit, 10);
+
+//     // Validate page and limit
+//     if (isNaN(pageNumber) || pageNumber <= 0) {
+//       return res.status(400).json({ error: 'Invalid page parameter' });
+//     }
+
+//     if (isNaN(limitNumber) || limitNumber <= 0) {
+//       return res.status(400).json({ error: 'Invalid limit parameter' });
+//     }
+
+//     // Calculate offset
+//     const offset = (pageNumber - 1) * limitNumber;
+
+//     // console.log('Offset:', offset); // Debugging log
+
+//     // Find all lawyers with status 'accept'
+//     const { count, rows } = await User.findAndCountAll({
+//       where: {
+//         role: 'lawyer',
+//         status: 'accept'
+//       },
+//       include: [{
+//         model: Review,
+//         as: 'LawyerReviews', // Use the correct alias
+//         attributes: ['rating']
+//       }],
+//       limit: limitNumber,
+//       offset
+//     });
+
+//     if (rows.length === 0) {
+//       return res.status(404).json({ error: 'No lawyers with status "accept" found' });
+//     }
+
+//     // console.log('Lawyers found:', rows.length); // Debugging log
+
+//     // Calculate the average rating for each lawyer
+//     const lawyers = rows.map(lawyer => {
+//       const totalRatings = lawyer.LawyerReviews.reduce((sum, review) => sum + review.rating, 0); // Use the correct alias
+//       const countReviews = lawyer.LawyerReviews.length; // Use the correct alias
+//       const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
+
+//       return {
+//         ...lawyer.toJSON(),
+//         averageRating,
+//       };
+//     });
+
+//     res.json({
+//       total: count,
+//       totalPages: Math.ceil(count / limitNumber),
+//       currentPage: pageNumber,
+//       limit: limitNumber,
+//       lawyers
+//     });
+//   } catch (error) {
+//     console.error('Server error:', error);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// };
+exports.getLawyersByStatusAccept = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, sort = 'DESC', specializations, status = 'accept' } = req.query;
+
+  // Convert page and limit to integers
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  // Validate page and limit
+  if (isNaN(pageNumber) || pageNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid page parameter' });
+  }
+
+  if (isNaN(limitNumber) || limitNumber <= 0) {
+      return res.status(400).json({ error: 'Invalid limit parameter' });
+  }
+
+  // Calculate offset
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // Define the where condition
   const where = {
-    role: 'lawyer',
-    status: 'accept' // Filter only accepted lawyers
+      role: 'lawyer',
+      status // Filter by status
   };
 
-  if (specialization) {
-    where.specializations = {
-      [Op.contains]: [specialization]
-    };
+  if (specializations) {
+      // Convert comma-separated string to an array
+      const specializationArray = specializations.split(',');
+      where.specializations = {
+          [Op.and]: specializationArray.map(spec => Sequelize.literal(`JSON_CONTAINS(specializations, '["${spec}"]')`))
+      };
   }
 
+  // Define the order condition based on the sort parameter
   const order = sort === 'top'
-    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
-    : sort === 'low'
-    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
-    : []; // Default order (if needed, otherwise empty)
+      ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
+      : sort === 'low'
+      ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
+      : [['createdAt', sort]]; // Default order by creation date
 
   try {
-    const { count, rows } = await User.findAndCountAll({
-      where,
-      include: [
-        {
-          model: Review,
-          as: 'LawyerReviews',
-          attributes: ['rating'] // Include only the rating in the subquery
-        }
-      ],
-      limit,
-      offset,
-      order
-    });
+      const { count, rows } = await User.findAndCountAll({
+          where,
+          include: [
+              {
+                  model: Review,
+                  as: 'LawyerReviews',
+                  attributes: ['rating'] // Include only the rating in the subquery
+              }
+          ],
+          limit: limitNumber,
+          offset,
+          order
+      });
 
-    const totalPages = Math.ceil(count / limit);
+      if (rows.length === 0) {
+          return res.status(404).json({ error: 'No lawyers found' });
+      }
 
-    res.status(200).json({
-      total: count,
-      totalPages,
-      currentPage: page,
-      results: rows.map(user => {
-        // Calculate average rating
-        const averageRating = user.LawyerReviews.reduce((sum, review) => sum + review.rating, 0) / user.LawyerReviews.length || 0;
+      // Calculate the average rating for each lawyer
+      const lawyers = rows.map(user => {
+          const averageRating = user.LawyerReviews.reduce((sum, review) => sum + review.rating, 0) / user.LawyerReviews.length || 0;
 
-        return {
-          id: user.userID,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          phoneNumber: user.phone_number,
-          personalImage: user.personal_image,
-          averageRating,
-          // Include all other user attributes
-          role: user.role,
-          nationalNumber: user.national_number,
-          lawyerPrice: user.lawyer_price,
-          specializations: user.specializations,
-          certification: user.certification,
-          description: user.description,
-          status: user.status,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt
-        };
-      })
-    });
+          return {
+              id: user.userID,
+              firstName: user.first_name,
+              lastName: user.last_name,
+              phoneNumber: user.phone_number,
+              personalImage: user.personal_image,
+              averageRating,
+              role: user.role,
+              nationalNumber: user.national_number,
+              lawyerPrice: user.lawyer_price,
+              specializations: user.specializations,
+              certification: user.certification,
+              description: user.description,
+              status: user.status,
+              createdAt: user.createdAt,
+              updatedAt: user.updatedAt
+          };
+      });
+
+      res.status(200).json({
+          total: count,
+          totalPages: Math.ceil(count / limitNumber),
+          currentPage: pageNumber,
+          limit: limitNumber,
+          results: lawyers
+      });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      error: {
-        statusCode: 500,
-        status: 'error'
-      },
-      message: error.message,
-      stack: error.stack
-    });
+      console.error('Server error:', error);
+      res.status(500).json({
+          status: 'error',
+          error: {
+              statusCode: 500,
+              status: 'error'
+          },
+          message: error.message,
+          stack: error.stack
+      });
   }
 });
-exports.getLawyersByStatusAccept = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
 
-    // Convert page and limit to integers
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-
-    // Validate page and limit
-    if (isNaN(pageNumber) || pageNumber <= 0) {
-      return res.status(400).json({ error: 'Invalid page parameter' });
-    }
-
-    if (isNaN(limitNumber) || limitNumber <= 0) {
-      return res.status(400).json({ error: 'Invalid limit parameter' });
-    }
-
-    // Calculate offset
-    const offset = (pageNumber - 1) * limitNumber;
-
-    // console.log('Offset:', offset); // Debugging log
-
-    // Find all lawyers with status 'accept'
-    const { count, rows } = await User.findAndCountAll({
-      where: {
-        role: 'lawyer',
-        status: 'accept'
-      },
-      include: [{
-        model: Review,
-        as: 'LawyerReviews', // Use the correct alias
-        attributes: ['rating']
-      }],
-      limit: limitNumber,
-      offset
-    });
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No lawyers with status "accept" found' });
-    }
-
-    // console.log('Lawyers found:', rows.length); // Debugging log
-
-    // Calculate the average rating for each lawyer
-    const lawyers = rows.map(lawyer => {
-      const totalRatings = lawyer.LawyerReviews.reduce((sum, review) => sum + review.rating, 0); // Use the correct alias
-      const countReviews = lawyer.LawyerReviews.length; // Use the correct alias
-      const averageRating = countReviews ? Math.ceil(totalRatings / countReviews) : 0;
-
-      return {
-        ...lawyer.toJSON(),
-        averageRating,
-      };
-    });
-
-    res.json({
-      total: count,
-      totalPages: Math.ceil(count / limitNumber),
-      currentPage: pageNumber,
-      limit: limitNumber,
-      lawyers
-    });
-  } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
 exports.getUserById = asyncHandler(async (req, res) => {
-  const { id } = req.params;  
+  const { id } = req.params;
   const user = await User.findByPk(id);
 
   if (!user) {
@@ -342,7 +478,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   user.phone_number = phone_number || user.phone_number;
   user.personal_image = personal_image || user.personal_image;
   user.description = description || user.description;
- 
+
 
   // Save the updated user profile
   await user.save();
@@ -504,7 +640,7 @@ exports.getLawyersByStatusPending = async (req, res) => {
       offset
     });
 
-  
+
 
     res.json({
       total: count,
@@ -627,9 +763,9 @@ exports.getAllLawyers = async (req, res) => {
 // get all lawyers count 
 
 exports.getLawyerCount = asyncHandler(async (req, res) => {
-    const lawyerCount = await User.count({ where: { role: 'lawyer' } });
+  const lawyerCount = await User.count({ where: { role: 'lawyer' } });
 
-    res.status(200).json({ count: lawyerCount });
+  res.status(200).json({ count: lawyerCount });
 });
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
