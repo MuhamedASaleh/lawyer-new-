@@ -1,28 +1,38 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const sequelize = require('../config/dbConfig'); // Update with the correct path to your Sequelize instance
 
 const OnlineUser = sequelize.define('OnlineUser', {
-  userId: {
+  id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    unique: true,
+    autoIncrement: true,
+    primaryKey: true,
   },
   socketId: {
     type: DataTypes.STRING,
-    allowNull: false,
     unique: true,
+    allowNull: false,
   },
-  username: {
+  userId: {
     type: DataTypes.STRING,
+    unique: true,
     allowNull: false,
   },
   isBusy: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    onUpdate: DataTypes.NOW,
+  },
 }, {
-  timestamps: false,
-  tableName: 'online_users',
+  tableName: 'onlineUser', // Specify the table name
+  timestamps: true, // Handles `createdAt` and `updatedAt` automatically
 });
 
 module.exports = OnlineUser;

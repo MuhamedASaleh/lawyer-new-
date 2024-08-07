@@ -99,19 +99,16 @@ exports.getCaseDetails = async (req, res) => {
 exports.updateCustomerFiles = (
   asyncHandler(async (req, res) => {
     const { caseId } = req.params;
-    const { files } = req.body; // Assuming 'files' is part of the request body
-
-
+    // const  {file}  = req.file; // Assuming 'files' is part of the request body
+ if (!req.file) return res.status(200).json({message :"you should provide the file"})
     const caseToUpdate = await Case.findByPk(caseId);
-    console.log('======================================================')
-    console.log(caseToUpdate)
-    console.log('======================================================')
+ 
     if (!caseToUpdate) {
       return res.status(404).json({ message: 'Case not found' });
     }
 
     // Add the new files to the existing customer_files
-    caseToUpdate.customer_files = files;
+    caseToUpdate.customer_files = req.file;
 
     await caseToUpdate.save();
     // Redirect the user to the payment page
