@@ -4,7 +4,7 @@ let clientCaller = { token: null, userId: null, socketID: null };
 let clientCallee = { token: null, userId: null, socketID: null };
 
 const video = (socket, io) => {
-  socket.on('userEnterRoom', (data) => {
+  socket.on('userRoom', (data) => {
     try {
 
       const { token } = data;

@@ -8,7 +8,8 @@ const { Auth, AuthorizeRole } = require('../middleware/auth')
 //routes
 
 // Route to get the count of lawyers
-router.get('/lawyerBySort', userController.getLawyersBySort);
+router.get('/lawyers/accepted', userController.getLawyersByStatusAccept);
+// router.get('/lawyerBySort', userController.getLawyersBySort);
 router.get('/lawyerCount', Auth, userController.getLawyerCount);
 router.get('/lawyer-counts',Auth, userController.getLawyerCountsByMonth);
 router.get('/customer-counts',Auth, userController.getCustomerCountsByMonth);
@@ -18,7 +19,7 @@ router.get('/customer-counts',Auth, userController.getCustomerCountsByMonth);
 router.get('/specializations', userController.getUsersBySpecializations);
 router.get('/status/:status', userController.getUsersByStatus);
 router.get('/customers', userController.getAllCustomers);
-router.get('/lawyers/accepted', userController.getLawyersByStatusAccept);
+
 router.get('/lawyers/pending', userController.getLawyersByStatusPending);
 router.patch('/:id/status' , Auth ,  AuthorizeRole('admin') ,userController.updateUserStatus);
 router.get('/lawyers', userController.getAllLawyers);
