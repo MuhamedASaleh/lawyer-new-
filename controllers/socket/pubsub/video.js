@@ -33,7 +33,7 @@ const video = (socket, io) => {
   });
   console.log('-------------')
 
-  
+
 
 
   socket.on('videoChatOffer', ({ sdp }) => {
@@ -41,7 +41,7 @@ const video = (socket, io) => {
     if (socket.id === clientCaller.socketID) {
       io.to(clientCallee.socketID).emit('getVideoChatOffer', sdp);
     }
-  });
+  }); 
 
   socket.on('videoChatAnswer', ({ sdp }) => {
     io.to(clientCaller.socketID).emit('getVideoChatAnswer', sdp);
