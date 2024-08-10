@@ -1,24 +1,26 @@
 const jwt = require('jsonwebtoken');
 
 let clientCaller = { token: null, userId: null, socketID: null };
-let clientCallee = {  id: null, socketID: null };
+let clientCallee = { id: null, socketID: null };
 
 const video = (socket, io) => {
   socket.on('userRoom', (data) => {
     try {
 
-      const { token , id } = data;
+      const { token, id } = data;
 
       // Verify the token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log(decoded.id)
       if (!clientCaller.token) {
 
-        clientCaller = { token,userId :decoded.id ,socketID: socket.id };
+        clientCaller = { token, userId: decoded.id, socketID: socket.id };
         console.log(clientCaller)
         io.to(socket.id).emit('userWaiting', 'Waiting for another user...');
-      } else {
-        clientCallee = { id , socketID: socket.id };
+      }
+      console.log(id)
+      if(id) {
+        clientCallee = { id: id, socketID: socket.id };
 
         console.log(clientCallee)
         io.to(socket.id).emit('userWaiting', 'Connecting you to a video chat...');
@@ -29,8 +31,13 @@ const video = (socket, io) => {
       console.error('Token verification error:', error);
     }
   });
+  console.log('-------------')
+
+  
+
 
   socket.on('videoChatOffer', ({ sdp }) => {
+    console.log("chat=======================")
     if (socket.id === clientCaller.socketID) {
       io.to(clientCallee.socketID).emit('getVideoChatOffer', sdp);
     }

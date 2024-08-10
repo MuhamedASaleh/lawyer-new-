@@ -8,23 +8,28 @@
 </head>
 <body>
     <h1>Video Chat Test</h1>
+    
     <div>
         <label for="token">Token:</label>
         <input type="text" id="token" placeholder="Enter token">
-        <button onclick="joinRoom()">Join Room</button>
     </div>
-    <div id="status"></div>
     <div>
-        <label for="roomId">Room ID:</label>
-        <input type="text" id="roomId" placeholder="Enter Room ID">
-        <button onclick="startCall()">Start Video Call</button>
-        <button onclick="endCall()">End Video Call</button>
+        <label for="id">User ID:</label>
+        <input type="number" id="id" placeholder="Enter user ID">
     </div>
+    <button onclick="joinRoom()">Join Room</button>
+    
+    <div id="status"></div>
+    
+    <h2>Video Call Controls</h2>
+    <button onclick="startCall()">Start Video Call</button>
+    <button onclick="endCall()">End Video Call</button>
 
     <script>
-        const socket = io('http://localhost:5050');
+        const socket = io('http://localhost:5050'); // Adjust the URL as needed
         let currentRoomId = null;
 
+        // Handle server messages
         socket.on('connect', () => {
             console.log('Connected to server');
         });
@@ -46,17 +51,22 @@
 
         socket.on('getVideoChatOffer', (sdp) => {
             console.log('Received video chat offer:', sdp);
-            // Handle the received SDP offer here
+            // Handle SDP offer
         });
 
         socket.on('getVideoChatAnswer', (sdp) => {
             console.log('Received video chat answer:', sdp);
-            // Handle the received SDP answer here
+            // Handle SDP answer
         });
 
         socket.on('getCandidate', (candidate) => {
             console.log('Received ICE candidate:', candidate);
-            // Handle the received ICE candidate here
+            // Handle ICE candidate
+        });
+
+        socket.on('userDisconnected', (message) => {
+            console.log(message);
+            document.getElementById('status').innerText = message;
         });
 
         socket.on('error', (errorMessage) => {
@@ -66,17 +76,22 @@
 
         function joinRoom() {
             const token = document.getElementById('token').value;
-            socket.emit('userRoom', { token });
+            const id = document.getElementById('id').value;
+            if (!token || !id) {
+                alert('Please enter both token and user ID');
+                return;
+            }
+            socket.emit('userRoom', { token, id });
         }
 
         function startCall() {
-            const roomId = document.getElementById('roomId').value;
-            if (!roomId) {
-                alert('Please enter the Room ID');
+            const sdp = 'SDP_OFFER_MOCK'; // Replace with actual SDP offer
+            const id = document.getElementById('id').value;
+            if (!id) {
+                alert('Please enter the user ID');
                 return;
             }
-            const sdp = 'SDP_OFFER_MOCK'; // Replace with actual SDP offer
-            socket.emit('videoChatOffer', { sdp, roomId });
+            socket.emit('videoChatOffer', { sdp, id });
             console.log('Sent video chat offer:', sdp);
         }
 
