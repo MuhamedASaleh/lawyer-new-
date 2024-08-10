@@ -7,7 +7,7 @@ require('dotenv').config(); // Ensure this is included to load environment varia
 const asyncHandler = require('express-async-handler');
 const sequelize = require('../config/dbConfig');
 
-exports.createCase = async (req, res) => { 
+exports.createCase = async (req, res) => {
   try {
     const { judge_name, lawyer_fees, court_fees } = req.body;
     const now = new Date();
@@ -100,9 +100,9 @@ exports.updateCustomerFiles = (
   asyncHandler(async (req, res) => {
     const { caseId } = req.params;
     // const  {file}  = req.file; // Assuming 'files' is part of the request body
- if (!req.file) return res.status(200).json({message :"you should provide the file"})
+    if (!req.file) return res.status(200).json({ message: "you should provide the file" })
     const caseToUpdate = await Case.findByPk(caseId);
- 
+
     if (!caseToUpdate) {
       return res.status(404).json({ message: 'Case not found' });
     }
@@ -146,7 +146,7 @@ exports.updateCustomerFiles = (
         }
       }
     };
-    
+
     try {
       const response = await axios.request(options);
       res.status(200).json({
@@ -741,32 +741,28 @@ exports.getLawyerCaseCountsByMonth = asyncHandler(async (req, res) => {
 exports.updateCaseStatus = asyncHandler(async (req, res) => {
   const { caseId } = req.params;
   const { status } = req.body;
-
-  const caseToUpdate = await Case.findByPk(caseId);
-
-  if (!caseToUpdate) {
-    return res.status(404).json({ message: 'Case not found' });
+  
+  const caseInstance = await Case.findByPk(caseId);
+  
+  if (!caseInstance) {
+    return res.status(404).json({ error: 'Case not found' });
   }
-
-  const now = new Date();
-
-  let statusHistory = caseToUpdate.statusHistory || [];
-
-  // Update end time for the current status if it has no end time yet
-  if (statusHistory.length > 0 && !statusHistory[statusHistory.length - 1].end) {
-    statusHistory[statusHistory.length - 1].end = now;
+  
+  const newCaseHistory = [...(caseInstance.statusHistory || [])];
+ 
+  if (newCaseHistory.length > 0) {
+    newCaseHistory[newCaseHistory.length - 1].end = new Date();
   }
+  
+  newCaseHistory.push({ status, start: new Date(), end: null });
+  
+  caseInstance.status = status;
+  caseInstance.statusHistory = newCaseHistory;
+  
+  await caseInstance.save();
+  
+  res.status(200).json(caseInstance);
 
-  // Add the new status with start time
-  const newStatusEntry = { status, start: now, end: null };
-  statusHistory.push(newStatusEntry);
-
-  caseToUpdate.status = status;
-  caseToUpdate.statusHistory = statusHistory;
-
-  await caseToUpdate.save();
-
-  res.status(200).json(caseToUpdate);
 });
 
 exports.getCaseStatusHistory = asyncHandler(async (req, res) => {
