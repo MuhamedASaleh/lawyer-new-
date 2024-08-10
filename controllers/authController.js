@@ -45,17 +45,25 @@ exports.registerUser = async (req, res) => {
       certification
     } = req.body;
 
-    // Parse the specializations field
-    const specializations = JSON.parse(req.body.specializations);
+    let specializations = [];
+
+    // Handle specializations only if the role is not "customer"
+    if (role !== 'customer' && req.body.specializations) {
+      try {
+        specializations = JSON.parse(req.body.specializations);
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid JSON format for specializations' });
+      }
+
+      // Validate specializations
+      const isValidSpecializations = specializations.every(spec => specializationsList.includes(spec));
+      if (!isValidSpecializations) {
+        return res.status(400).json({ error: 'Invalid specializations' });
+      }
+    }
 
     if (password !== confirm_password) {
       return res.status(400).json({ error: "Passwords don't match" });
-    }
-
-    // Validate specializations
-    const isValidSpecializations = specializations.every(spec => specializationsList.includes(spec));
-    if (!isValidSpecializations) {
-      return res.status(400).json({ error: 'Invalid specializations' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -83,6 +91,8 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.loginUser = async (req, res) => {
   try {
