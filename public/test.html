@@ -63,7 +63,7 @@
     <ul id="userList"></ul>
 
     <div id="callControls" style="display: none;">
-        <input type="hidden" id="calleeUsername" />
+        <input type="hidden" id="calleeSocketId" />
         <button id="startCallButton">Start Call</button>
     </div>
 
@@ -92,26 +92,28 @@
         const callerNameElem = document.getElementById('callerName');
         const acceptCallButton = document.getElementById('acceptCall');
         const rejectCallButton = document.getElementById('rejectCall');
-        const calleeUsernameInput = document.getElementById('calleeUsername');
+        const calleeSocketIdInput = document.getElementById('calleeSocketId');
 
         let localStream;
+        let remoteStream;
         let peerConnection;
-        const servers = null; // Use default STUN/TURN servers
+        const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // Using a Google STUN server
         let roomId;
         let callerSocketId;
 
-        joinButton.onclick = () => {
+        joinButton.onclick = async () => {
             const username = usernameInput.value;
             if (username) {
                 socket.emit('join', username);
+                await startLocalStream(); // Start local stream when joining
             }
         };
 
         startCallButton.onclick = async () => {
-            const calleeUsername = calleeUsernameInput.value;
-            if (calleeUsername) {
-                await startLocalStream();
-                socket.emit('startCall', calleeUsername);
+            const calleeSocketId = calleeSocketIdInput.value;
+            if (calleeSocketId) {
+                await startLocalStream(); // Ensure the local stream starts before creating an offer
+                socket.emit('startCall', calleeSocketId);
             }
         };
 
@@ -119,11 +121,11 @@
             userList.innerHTML = '';
             users.forEach(user => {
                 const li = document.createElement('li');
-                li.textContent = user;
+                li.textContent = user.name;
                 const callButton = document.createElement('button');
                 callButton.textContent = 'Call';
                 callButton.onclick = () => {
-                    calleeUsernameInput.value = user;
+                    calleeSocketIdInput.value = user.id;
                     callControls.style.display = 'block';
                 };
                 li.appendChild(callButton);
@@ -131,15 +133,15 @@
             });
         });
 
-        socket.on('incomingCall', ({ caller, callerSocketId }) => {
+        socket.on('incomingCall', ({ caller, callerSocketId: callerId }) => {
             callerNameElem.textContent = `Incoming call from ${caller}`;
             incomingCallDiv.style.display = 'block';
-            callerSocketId = callerSocketId;
+            callerSocketId = callerId;
         });
 
         acceptCallButton.onclick = async () => {
             incomingCallDiv.style.display = 'none';
-            await startLocalStream();
+            await startLocalStream(); // Start the local stream for the callee
             socket.emit('acceptCall', { callerSocketId });
             setupPeerConnection();
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -149,9 +151,14 @@
             incomingCallDiv.style.display = 'none';
         };
 
-        socket.on('callAccepted', ({ roomId }) => {
+        socket.on('callAccepted', async ({ roomId: id }) => {
+            roomId = id; // Set roomId for later use
             setupPeerConnection();
-            this.roomId = roomId;
+            
+            // Caller creates an offer after the call is accepted
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', offer, roomId);
         });
 
         socket.on('offer', async (offer) => {
@@ -176,21 +183,36 @@
 
         async function setupPeerConnection() {
             peerConnection = new RTCPeerConnection(servers);
+
+            // Create a new MediaStream for the remote video
+            remoteStream = new MediaStream();
+            remoteVideo.srcObject = remoteStream;
+
             peerConnection.ontrack = (event) => {
-                remoteVideo.srcObject = event.streams[0];
+                // Add tracks from the peer connection to the remote stream
+                event.streams[0].getTracks().forEach(track => {
+                    remoteStream.addTrack(track);
+                });
             };
+
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     socket.emit('ice candidate', event.candidate, roomId);
                 }
             };
+
+            // Add local tracks to the peer connection
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+            }
         }
 
         async function startLocalStream() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localVideo.srcObject = localStream;
-                localVideo.style.display = 'block'; // Ensure local video is displayed
             } catch (error) {
                 console.error('Error accessing media devices.', error);
             }
