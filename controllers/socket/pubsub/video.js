@@ -344,7 +344,7 @@ const video = (socket, io) => {
       socket.to(roomId).emit('userDisconnected');
       delete rooms[roomId];
     });
-  });
+  }); 
 };
 
 module.exports = video;
