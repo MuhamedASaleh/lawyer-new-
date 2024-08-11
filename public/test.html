@@ -25,19 +25,9 @@
             margin-top: 20px;
         }
 
-        #localVideo {
-            width: 150px;
-            height: 100px;
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            border: 2px solid #ccc;
-            background-color: #000;
-        }
-
-        #remoteVideo {
-            width: 100%;
-            height: 100%;
+        #localVideo, #remoteVideo {
+            width: 200px;
+            height: 150px;
             border: 2px solid #ccc;
             background-color: #000;
         }
@@ -50,6 +40,17 @@
             justify-content: center;
             align-items: center;
             background-color: #000;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+        }
+
+        #localVideo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
         }
     </style>
 </head>
@@ -106,9 +107,10 @@
             }
         };
 
-        startCallButton.onclick = () => {
+        startCallButton.onclick = async () => {
             const calleeUsername = calleeUsernameInput.value;
             if (calleeUsername) {
+                await startLocalStream();
                 socket.emit('startCall', calleeUsername);
             }
         };
@@ -149,6 +151,7 @@
 
         socket.on('callAccepted', ({ roomId }) => {
             setupPeerConnection();
+            this.roomId = roomId;
         });
 
         socket.on('offer', async (offer) => {
@@ -187,7 +190,7 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localVideo.srcObject = localStream;
-                localVideo.style.display = 'block'; // Show local video
+                localVideo.style.display = 'block'; // Ensure local video is displayed
             } catch (error) {
                 console.error('Error accessing media devices.', error);
             }

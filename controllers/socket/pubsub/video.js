@@ -105,52 +105,48 @@ const onlineUsers = {};
 
 const video = (socket, io) => { 
 
+// Handle user joining
+socket.on('join', (username) => {
+  onlineUsers[socket.id] = username;
+  io.emit('updateUserList', Object.values(onlineUsers));
+  console.log(`${username} joined. Online users:`, onlineUsers);
+});
 
-    // Handle user joining
-    socket.on('join', (username) => {
-      onlineUsers[socket.id] = username;
-      io.emit('updateUserList', Object.values(onlineUsers));
-      console.log(`${username} joined. Online users:`, onlineUsers);
-  });
+// Handle starting a call
+socket.on('startCall', (calleeUsername) => {
+  const calleeSocketId = Object.keys(onlineUsers).find(
+      (id) => onlineUsers[id] === calleeUsername
+  );
+  if (calleeSocketId) {
+      io.to(calleeSocketId).emit('incomingCall', {
+          caller: onlineUsers[socket.id],
+          callerSocketId: socket.id,
+      });
+  }
+});
 
-  // Handle starting a call
-  socket.on('startCall', (calleeUsername) => {
-      const calleeSocketId = Object.keys(onlineUsers).find(
-          (id) => onlineUsers[id] === calleeUsername
-      );
-      if (calleeSocketId) {
-          io.to(calleeSocketId).emit('incomingCall', {
-              caller: onlineUsers[socket.id],
-              callerSocketId: socket.id,
-          });
-      }
-  });
+// Handle accepting a call
+socket.on('acceptCall', ({ callerSocketId }) => {
+  const roomId = `${socket.id}-${callerSocketId}`;
+  socket.join(roomId);
+  io.to(callerSocketId).emit('callAccepted', { roomId });
+  io.to(socket.id).emit('callAccepted', { roomId });
+});
 
-  // Handle accepting a call
-  socket.on('acceptCall', ({ callerSocketId }) => {
-      const roomId = `${socket.id}-${callerSocketId}`;
-      socket.join(roomId);
-      io.to(callerSocketId).emit('callAccepted', { roomId });
-      io.to(socket.id).emit('callAccepted', { roomId });
-  });
-  
-  // Handle offer
-  socket.on('offer', (offer, roomId) => {
-      socket.to(roomId).emit('offer', offer);
-  });
+// Handle offer
+socket.on('offer', (offer, roomId) => {
+  socket.to(roomId).emit('offer', offer);
+});
 
-  // Handle answer
-  socket.on('answer', (answer, roomId) => {
-      socket.to(roomId).emit('answer', answer);
-  }); 
- 
-  // Handle ICE candidate
-  socket.on('ice candidate', (candidate, roomId) => {
-      socket.to(roomId).emit('ice candidate', candidate);
-  });
+// Handle answer
+socket.on('answer', (answer, roomId) => {
+  socket.to(roomId).emit('answer', answer);
+});
 
-
-
+// Handle ICE candidate
+socket.on('ice candidate', (candidate, roomId) => {
+  socket.to(roomId).emit('ice candidate', candidate);
+});
 
 
 
