@@ -868,29 +868,33 @@ exports.getUserCases = asyncHandler(async (req, res) => {
   });
   const thelastVersion = cases.map(caseItem => {
     const newcaseHistory = []; // Reset newcaseHistory for each case
-  
+
     caseItem.statusHistory.forEach(history => {
       const startDate = new Date(history.start);
       const endDate = history.end ? new Date(history.end) : null;
-  
+
       const startMonthYear = `${startDate.getMonth() + 1}/${startDate.getFullYear()}`;
       const endMonthYear = endDate ? `${endDate.getMonth() + 1}/${endDate.getFullYear()}` : 'Ongoing';
-  
-      if (startMonthYear === endMonthYear) {
+
+      if (startMonthYear === endMonthYear || endDate === null) {
         newcaseHistory.push({ start: history.start, end: history.end, status: history.status });
-      } else {
-        newcaseHistory.push({
-          1: { start: history.start, status: history.status },
-          2: { end: history.end, status: history.status }
-        });
       }
+      else {
+        // Push start and end separately when they don't fall in the same month/year
+        newcaseHistory.push({
+          one: { start: history.start, status: history.status },
+          two: { end: history.end, status: history.status }
+        }
+        );
+      }
+
     });
-  
+
     // Update the statusHistory for the current case
     caseItem.statusHistory = newcaseHistory;
     return caseItem; // Return the modified caseItem
   });
-  
+
   console.log(thelastVersion);
   res.status(200).json({ message: thelastVersion });
 });
