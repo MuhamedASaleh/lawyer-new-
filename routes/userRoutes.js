@@ -29,5 +29,5 @@ router.delete('/:id', userController.deleteUser);
 router.get('/current/profile', Auth, getProfile);
 router.put('/current/profile', Auth, updateProfile);
 
-
+    
 module.exports = router;
