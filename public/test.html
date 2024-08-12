@@ -35,9 +35,10 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    let localStream;
+    const peerConnections = {};
 
     // Get user media
-    let localStream;
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
         localStream = stream;
@@ -54,9 +55,9 @@
     // Handle user list updates
     socket.on('updateUserList', (users) => {
       const userList = document.getElementById('userList');
-      userList.innerHTML = ''; // Clear existing user list
+      userList.innerHTML = '';
       users.forEach(({ id, name }) => {
-        if (id !== socket.id) { // Skip showing the current user
+        if (id !== socket.id) {
           const userItem = document.createElement('div');
           userItem.className = 'user';
           userItem.textContent = `${name} (ID: ${id})`;
@@ -76,27 +77,25 @@
       const acceptCall = confirm(`${caller} wants to call you. Accept?`);
       if (acceptCall) {
         socket.emit('acceptCall', { roomId });
-        joinRoom(roomId);
+        setupWebRTC(roomId, calleeSocketId);
       }
     });
 
     // Handle call accepted
     socket.on('callAccepted', ({ roomId }) => {
-      joinRoom(roomId);
+      setupWebRTC(roomId);
     });
 
-    // Join a room
-    function joinRoom(roomId) {
-      setupWebRTC(roomId);
-    }
-
-    function setupWebRTC(roomId) {
+    function setupWebRTC(roomId, calleeSocketId) {
       const peerConnection = new RTCPeerConnection();
+      peerConnections[roomId] = peerConnection;
+
       peerConnection.onicecandidate = event => {
         if (event.candidate) {
           socket.emit('candidate', { candidate: event.candidate, roomId });
         }
       };
+
       peerConnection.ontrack = event => {
         document.getElementById('remoteVideo').srcObject = event.streams[0];
       };
@@ -105,12 +104,10 @@
 
       // Handle video offer
       socket.on('getVideoChatOffer', ({ sdp }) => {
-        peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-        peerConnection.createAnswer()
-          .then(answer => {
-            peerConnection.setLocalDescription(answer);
-            socket.emit('videoChatAnswer', { sdp: answer, roomId });
-          });
+        peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+          .then(() => peerConnection.createAnswer())
+          .then(answer => peerConnection.setLocalDescription(answer))
+          .then(() => socket.emit('videoChatAnswer', { sdp: peerConnection.localDescription, roomId }));
       });
 
       // Handle video answer

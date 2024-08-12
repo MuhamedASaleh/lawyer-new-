@@ -494,7 +494,7 @@ const video = (socket, io) => {
     io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
     console.log(`${username} joined. Online users:`, onlineUsers);
   });
- 
+   
   // Handle starting a call by creating/joining a room
   socket.on('startCall', (calleeSocketId) => {
     if (onlineUsers[calleeSocketId]) {
