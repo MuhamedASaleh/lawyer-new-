@@ -58,7 +58,8 @@ router.get('/lawyer-case-counts/:id', Auth, getLawyerCaseCountsByMonth);
 // Get the status history of a case
 router.get('/:caseId/status-history', getCaseStatusHistory);
 // Route to update case status to accepted (for customers only)
-router.put('/:caseId/updateStatus', updateCaseStatus);
+router.put('/updateStatus/:caseId', updateCaseStatus);
 
 
 module.exports = router;
+ 

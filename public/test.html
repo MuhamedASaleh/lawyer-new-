@@ -3,136 +3,201 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Chat Test</title>
+  <title>Video Call App</title>
   <style>
-    #localVideo, #remoteVideo {
-      width: 45%;
-      height: auto;
-      border: 1px solid black;
-      margin: 10px;
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f0f0f0;
     }
-    #controls {
-      margin: 10px;
+
+    #userList {
+      margin-bottom: 20px;
+    }
+
+    #callControls, #incomingCall {
+      margin-top: 20px;
+    }
+
+    #videoContainer {
+      position: relative;
+      width: 80%;
+      height: 80vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
+    }
+
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+    }
+
+    #localVideo {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 200px;
+      height: 150px;
+      border: 2px solid #ccc;
+      background-color: #000;
     }
   </style>
 </head>
 <body>
-  <h1>Video Chat Test</h1>
-  <div id="controls">
-    <label for="token">Token:</label>
-    <input type="text" id="token" placeholder="Enter your token" />
-    <label for="userId">User ID:</label>
-    <input type="text" id="userId" placeholder="Enter user ID to call" />
-    <button id="joinRoom">Join Room</button>
-    <div id="callControls" style="display:none;">
-      <button id="acceptCall">Accept</button>
-      <button id="refuseCall">Refuse</button>
-    </div>
+  <h1>Video Call App</h1>
+  <input id="username" placeholder="Enter your username" />
+  <button id="joinButton">Join</button>
+
+  <h2>Online Users</h2>
+  <ul id="userList"></ul>
+
+  <div id="callControls" style="display: none;">
+    <input type="hidden" id="calleeSocketId" />
+    <button id="startCallButton">Start Call</button>
   </div>
-  <video id="localVideo" autoplay muted></video>
-  <video id="remoteVideo" autoplay></video>
+
+  <div id="incomingCall" style="display: none;">
+    <p id="callerName"></p>
+    <button id="acceptCall">Accept</button>
+    <button id="rejectCall">Reject</button>
+  </div>
+
+  <div id="videoContainer">
+    <video id="remoteVideo" autoplay></video>
+    <video id="localVideo" autoplay muted></video>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io('http://localhost:5050');
-
+    const socket = io();
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
-    const tokenInput = document.getElementById('token');
-    const userIdInput = document.getElementById('userId');
-    const joinRoomButton = document.getElementById('joinRoom');
+    const usernameInput = document.getElementById('username');
+    const joinButton = document.getElementById('joinButton');
+    const userList = document.getElementById('userList');
     const callControls = document.getElementById('callControls');
+    const startCallButton = document.getElementById('startCallButton');
+    const incomingCallDiv = document.getElementById('incomingCall');
+    const callerNameElem = document.getElementById('callerName');
     const acceptCallButton = document.getElementById('acceptCall');
-    const refuseCallButton = document.getElementById('refuseCall');
+    const rejectCallButton = document.getElementById('rejectCall');
+    const calleeSocketIdInput = document.getElementById('calleeSocketId');
 
     let localStream;
     let peerConnection;
-    const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    const servers = null; // Use default STUN/TURN servers
+    let roomId;
+
+    joinButton.onclick = () => {
+      const username = usernameInput.value;
+      if (username) {
+        socket.emit('join', username);
+      }
+    };
+
+    startCallButton.onclick = () => {
+      const calleeSocketId = calleeSocketIdInput.value;
+      if (calleeSocketId) {
+        socket.emit('startCall', calleeSocketId);
+      }
+    };
+
+    socket.on('updateUserList', (users) => {
+      userList.innerHTML = '';
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user.name;
+        const callButton = document.createElement('button');
+        callButton.textContent = 'Call';
+        callButton.onclick = () => {
+          calleeSocketIdInput.value = user.id;
+          callControls.style.display = 'block';
+        };
+        li.appendChild(callButton);
+        userList.appendChild(li);
+      });
+    });
+
+    socket.on('incomingCall', ({ caller, callerSocketId }) => {
+      callerNameElem.textContent = `Incoming call from ${caller}`;
+      incomingCallDiv.style.display = 'block';
+      calleeSocketIdInput.value = callerSocketId;
+    });
+
+    acceptCallButton.onclick = async () => {
+      incomingCallDiv.style.display = 'none';
+      await startLocalStream();
+      socket.emit('acceptCall', { callerSocketId: calleeSocketIdInput.value });
+    };
+
+    rejectCallButton.onclick = () => {
+      incomingCallDiv.style.display = 'none';
+    };
+
+    socket.on('callAccepted', ({ roomId }) => {
+      setupPeerConnection();
+      this.roomId = roomId;
+      peerConnection.createOffer()
+        .then(offer => {
+          peerConnection.setLocalDescription(offer);
+          socket.emit('videoChatOffer', { sdp: offer, roomId });
+        });
+    });
+
+    socket.on('getVideoChatOffer', ({ sdp }) => {
+      setupPeerConnection();
+      peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+        .then(() => peerConnection.createAnswer())
+        .then(answer => {
+          peerConnection.setLocalDescription(answer);
+          socket.emit('videoChatAnswer', { sdp: answer, roomId: this.roomId });
+        });
+    });
+
+    socket.on('getVideoChatAnswer', ({ sdp }) => {
+      peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+    });
+
+    socket.on('getCandidate', ({ candidate }) => {
+      peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+
+    async function setupPeerConnection() {
+      peerConnection = new RTCPeerConnection(servers);
+
+      peerConnection.ontrack = (event) => {
+        remoteVideo.srcObject = event.streams[0];
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('candidate', { candidate: event.candidate, roomId: this.roomId });
+        }
+      };
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      }
+    }
 
     async function startLocalStream() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
+        localVideo.style.display = 'block'; // Ensure local video is displayed
       } catch (error) {
         console.error('Error accessing media devices.', error);
       }
     }
-
-    function createPeerConnection() {
-      peerConnection = new RTCPeerConnection(configuration);
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-          socket.emit('candidate', { candidate: event.candidate });
-        }
-      };
-      peerConnection.ontrack = event => {
-        remoteVideo.srcObject = event.streams[0];
-      };
-      localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-      });
-    }
-
-    joinRoomButton.addEventListener('click', () => {
-      const token = tokenInput.value;
-      const userId = userIdInput.value;
-      if (token && userId) {
-        socket.emit('userRoom', { token, id: userId });
-      } else {
-        alert('Please enter both token and user ID.');
-      }
-    });
-
-    socket.on('incomingCall', (data) => {
-      callControls.style.display = 'block';
-    });
-
-    acceptCallButton.addEventListener('click', () => {
-      socket.emit('callResponse', { accepted: true });
-      callControls.style.display = 'none';
-      createPeerConnection();
-    });
-
-    refuseCallButton.addEventListener('click', () => {
-      socket.emit('callResponse', { accepted: false });
-      callControls.style.display = 'none';
-    });
-
-    socket.on('roomReady', (roomId) => {
-      if (!peerConnection) createPeerConnection();
-      const offer = peerConnection.createOffer();
-      offer.then(sdp => {
-        peerConnection.setLocalDescription(sdp);
-        socket.emit('videoChatOffer', { sdp });
-      });
-    });
-
-    socket.on('getVideoChatOffer', async ({ sdp }) => {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.emit('videoChatAnswer', { sdp: answer });
-    });
-
-    socket.on('getVideoChatAnswer', async ({ sdp }) => {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-    });
-
-    socket.on('getCandidate', async ({ candidate }) => {
-      try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (error) {
-        console.error('Error adding received ice candidate', error);
-      }
-    });
-
-    socket.on('userDisconnected', message => {
-      alert(message);
-      peerConnection.close();
-      peerConnection = null;
-    });
-
-    startLocalStream();
   </script>
 </body>
 </html>
