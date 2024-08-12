@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -198,6 +198,96 @@
         console.error('Error accessing media devices.', error);
       }
     }
+  </script>
+</body>
+</html> -->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRTC Video Chat</title>
+</head>
+<body>
+  <video id="localVideo" autoplay muted></video>
+  <video id="remoteVideo" autoplay></video>
+
+  <button id="startButton">Start Call</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const startButton = document.getElementById('startButton');
+
+    let localStream;
+    let remoteStream;
+    let peerConnection;
+
+    const roomId = 'room1'; // Example room ID
+
+    const servers = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    };
+
+    // Join the room
+    socket.emit('joinRoom', roomId);
+
+    socket.on('usersInRoom', (users) => {
+      console.log('Users in room:', users);
+    });
+
+    startButton.onclick = async () => {
+      // Get local media stream
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+
+      peerConnection = new RTCPeerConnection(servers);
+      peerConnection.addTrack(localStream.getTracks()[0], localStream);
+      peerConnection.addTrack(localStream.getTracks()[1], localStream);
+
+      peerConnection.ontrack = (event) => {
+        remoteStream = event.streams[0];
+        remoteVideo.srcObject = remoteStream;
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('candidate', { candidate: event.candidate, roomId });
+        }
+      };
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      socket.emit('videoChatOffer', { sdp: offer.sdp, roomId });
+    };
+
+    socket.on('getVideoChatOffer', async ({ sdp }) => {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      socket.emit('videoChatAnswer', { sdp: answer.sdp, roomId });
+    });
+
+    socket.on('getVideoChatAnswer', async ({ sdp }) => {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }));
+    });
+
+    socket.on('getCandidate', async ({ candidate }) => {
+      if (candidate) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    });
   </script>
 </body>
 </html>

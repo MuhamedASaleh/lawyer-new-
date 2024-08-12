@@ -284,118 +284,184 @@
 //   return 'room_' + Math.random().toString(36).substr(2, 9);
 // }
 
-const onlineUsers = {}; // To track online users by socket ID
-const rooms = {}; // To store active rooms
+// const onlineUsers = {}; // To track online users by socket ID
+// const rooms = {}; // To store active rooms
 
-const video = (socket, io) => { 
-  // Handle user joining
-  socket.on('join', (username) => {
-    onlineUsers[socket.id] = username;
-    io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
-    console.log(`${username} joined. Online users:`, onlineUsers);
-  });
+// const video = (socket, io) => { 
+//   // Handle user joining
+//   socket.on('join', (username) => {
+//     onlineUsers[socket.id] = username;
+//     io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
+//     console.log(`${username} joined. Online users:`, onlineUsers);
+//   });
 
-  // Handle starting a call with socket ID
-  socket.on('startCall', (calleeSocketId) => {
-    if (onlineUsers[calleeSocketId]) {
-      io.to(calleeSocketId).emit('incomingCall', {
-        caller: onlineUsers[socket.id],
-        callerSocketId: socket.id,
-      });
+//   // Handle starting a call with socket ID
+//   socket.on('startCall', (calleeSocketId) => {
+//     if (onlineUsers[calleeSocketId]) {
+//       io.to(calleeSocketId).emit('incomingCall', {
+//         caller: onlineUsers[socket.id],
+//         callerSocketId: socket.id,
+//       });
+//     }
+//   });
+
+//   // Handle accepting a call
+//   socket.on('acceptCall', ({ callerSocketId }) => {
+//     const roomId = `${socket.id}-${callerSocketId}`;
+//     socket.join(roomId);
+//     rooms[roomId] = { callerSocketId, calleeSocketId: socket.id };
+//     io.to(callerSocketId).emit('callAccepted', { roomId });
+//     io.to(socket.id).emit('callAccepted', { roomId });
+//   });
+
+//   socket.on('videoChatOffer', ({ sdp, roomId }) => {
+//     console.log(`Received videoChatOffer from socket ${socket.id} for room ${roomId}`);
+
+//     // Find the room by roomId
+//     const room = rooms[roomId];
+//     console.log(`Room details:`, room);
+
+//     // If the room exists
+//     if (room) {
+//       const { calleeSocketId } = room;
+//       console.log(`Sending videoChatOffer to callee socket ${calleeSocketId}`);
+
+//       // Send the SDP offer to the callee
+//       io.to(calleeSocketId).emit('getVideoChatOffer', { sdp });
+//       console.log(`Sent videoChatOffer to callee socket ${calleeSocketId} with SDP:`, sdp);
+//     } else {
+//       console.log(`Room ${roomId} not found`);
+//     }
+//   });
+
+//   // Handle video chat answer
+//   socket.on('videoChatAnswer', ({ sdp, roomId }) => {
+//     console.log(`Received videoChatAnswer from socket ${socket.id} for room ${roomId}`);
+
+//     // Find the room by roomId
+//     const room = rooms[roomId];
+//     console.log(`Room details:`, room);
+
+//     // If the room exists
+//     if (room) {
+//       const { callerSocketId } = room;
+//       console.log(`Sending videoChatAnswer to caller socket ${callerSocketId}`);
+
+//       // Send the SDP answer to the caller
+//       io.to(callerSocketId).emit('getVideoChatAnswer', { sdp });
+//       console.log(`Sent videoChatAnswer to caller socket ${callerSocketId} with SDP:`, sdp);
+//     } else {
+//       console.log(`Room ${roomId} not found`);
+//     }
+//   });
+
+//   // Handle ICE candidates
+//   socket.on('candidate', ({ candidate, roomId }) => {
+//     console.log(`Received ICE candidate from socket ${socket.id} for room ${roomId}`);
+
+//     // Find the room by roomId
+//     const room = rooms[roomId];
+//     console.log(`Room details:`, room);
+
+//     // If the room exists
+//     if (room) {
+//       const { callerSocketId, calleeSocketId } = room;
+//       console.log(`Room participants - Caller: ${callerSocketId}, Callee: ${calleeSocketId}`);
+
+//       // Check if the sender is the caller or callee and send the candidate accordingly
+//       if (socket.id === callerSocketId) {
+//         console.log(`Sending ICE candidate to callee socket ${calleeSocketId}`);
+//         io.to(calleeSocketId).emit('getCandidate', candidate);
+//       } else {
+//         console.log(`Sending ICE candidate to caller socket ${callerSocketId}`);
+//         io.to(callerSocketId).emit('getCandidate', candidate);
+//       }
+//       console.log(`Sent ICE candidate:`, candidate);
+//     } else {
+//       console.log(`Room ${roomId} not found`);
+//     }
+//   });
+
+
+//   // Handle user disconnection
+//   socket.on('disconnect', () => {
+//     // Clean up rooms and notify other users
+//     for (let roomId in rooms) {
+//       if (rooms[roomId].callerSocketId === socket.id || rooms[roomId].calleeSocketId === socket.id) {
+//         io.to(roomId).emit('userLeft');
+//         delete rooms[roomId];
+//       }
+//     }
+//     delete onlineUsers[socket.id];
+//     io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
+//     console.log(`User ${socket.id} disconnected. Online users:`, onlineUsers);
+//   });
+// } 
+
+
+
+const rooms = {};
+const video = (socket, io) => {
+
+  // Handle joining a room
+  socket.on('joinRoom', (roomId) => {
+    if (!rooms[roomId]) {
+      rooms[roomId] = [];
     }
-  });
-
-  // Handle accepting a call
-  socket.on('acceptCall', ({ callerSocketId }) => {
-    const roomId = `${socket.id}-${callerSocketId}`;
+    console.log(socket.id)
+    console.log(roomId)
+    rooms[roomId].push(socket.id);
     socket.join(roomId);
-    rooms[roomId] = { callerSocketId, calleeSocketId: socket.id };
-    io.to(callerSocketId).emit('callAccepted', { roomId });
-    io.to(socket.id).emit('callAccepted', { roomId });
+    console.log(`User ${socket.id} joined room ${roomId}`);
+
+    const usersInRoom = rooms[roomId];
+    socket.emit('usersInRoom', usersInRoom);
   });
 
+  // Handle video chat offer
   socket.on('videoChatOffer', ({ sdp, roomId }) => {
-    console.log(`Received videoChatOffer from socket ${socket.id} for room ${roomId}`);
-    
-    // Find the room by roomId
     const room = rooms[roomId];
-    console.log(`Room details:`, room);
-
-    // If the room exists
     if (room) {
-      const { calleeSocketId } = room;
-      console.log(`Sending videoChatOffer to callee socket ${calleeSocketId}`);
-
-      // Send the SDP offer to the callee
-      io.to(calleeSocketId).emit('getVideoChatOffer', { sdp });
-      console.log(`Sent videoChatOffer to callee socket ${calleeSocketId} with SDP:`, sdp);
-    } else {
-      console.log(`Room ${roomId} not found`);
+      const otherUser = room.find(id => id !== socket.id);
+      if (otherUser) {
+        io.to(otherUser).emit('getVideoChatOffer', { sdp });
+      }
     }
   });
 
   // Handle video chat answer
   socket.on('videoChatAnswer', ({ sdp, roomId }) => {
-    console.log(`Received videoChatAnswer from socket ${socket.id} for room ${roomId}`);
-    
-    // Find the room by roomId
     const room = rooms[roomId];
-    console.log(`Room details:`, room);
-
-    // If the room exists
     if (room) {
-      const { callerSocketId } = room;
-      console.log(`Sending videoChatAnswer to caller socket ${callerSocketId}`);
-
-      // Send the SDP answer to the caller
-      io.to(callerSocketId).emit('getVideoChatAnswer', { sdp });
-      console.log(`Sent videoChatAnswer to caller socket ${callerSocketId} with SDP:`, sdp);
-    } else {
-      console.log(`Room ${roomId} not found`);
+      const otherUser = room.find(id => id !== socket.id);
+      if (otherUser) {
+        io.to(otherUser).emit('getVideoChatAnswer', { sdp });
+      }
     }
   });
 
   // Handle ICE candidates
   socket.on('candidate', ({ candidate, roomId }) => {
-    console.log(`Received ICE candidate from socket ${socket.id} for room ${roomId}`);
-    
-    // Find the room by roomId
     const room = rooms[roomId];
-    console.log(`Room details:`, room);
-
-    // If the room exists
     if (room) {
-      const { callerSocketId, calleeSocketId } = room;
-      console.log(`Room participants - Caller: ${callerSocketId}, Callee: ${calleeSocketId}`);
-
-      // Check if the sender is the caller or callee and send the candidate accordingly
-      if (socket.id === callerSocketId) {
-        console.log(`Sending ICE candidate to callee socket ${calleeSocketId}`);
-        io.to(calleeSocketId).emit('getCandidate', candidate);
-      } else {
-        console.log(`Sending ICE candidate to caller socket ${callerSocketId}`);
-        io.to(callerSocketId).emit('getCandidate', candidate);
+      const otherUser = room.find(id => id !== socket.id);
+      if (otherUser) {
+        io.to(otherUser).emit('getCandidate', candidate);
       }
-      console.log(`Sent ICE candidate:`, candidate);
-    } else {
-      console.log(`Room ${roomId} not found`);
     }
   });
 
-
-  // Handle user disconnection
+  // Handle user disconnect
   socket.on('disconnect', () => {
-    // Clean up rooms and notify other users
-    for (let roomId in rooms) {
-      if (rooms[roomId].callerSocketId === socket.id || rooms[roomId].calleeSocketId === socket.id) {
-        io.to(roomId).emit('userLeft');
+    console.log('A user disconnected:', socket.id);
+    for (const roomId in rooms) {
+      rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
+      if (rooms[roomId].length === 0) {
         delete rooms[roomId];
       }
     }
-    delete onlineUsers[socket.id];
-    io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
-    console.log(`User ${socket.id} disconnected. Online users:`, onlineUsers);
   });
-} 
+}
+
 
 module.exports = video;

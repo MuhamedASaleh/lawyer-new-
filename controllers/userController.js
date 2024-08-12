@@ -847,3 +847,25 @@ exports.getCustomerCountsByMonth = async (req, res) => {
   }
 };
 
+
+exports.getUserCases = asyncHandler(async (req, res) => {
+  
+  const statuses = [
+    'inspection',
+    'court',
+    'pleadings',
+    'completed'
+  ];
+
+  const cases = await Case.findAll({
+    where: {
+      status: statuses,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    }
+  });
+
+  res.status(200).json({ message: cases });
+});
