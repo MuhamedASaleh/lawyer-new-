@@ -49,6 +49,24 @@ app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
+      // const authenticateSocket = (socket, next) => {
+        //     const token = socket.handshake.headers.authorization;
+
+        //     if (token) {
+        //         jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        //             if (err) {
+        //                 return next(new Error('Authentication error'));
+        //             }
+        //             socket.userId = decoded.id; // Store the user ID in the socket
+        //             next(); 
+        //         });
+        //     } else {
+        //         next(new Error('Authentication error'));
+        //     }
+        // };
+
+        // Apply the middleware
+        // io.use(authenticateSocket);
 
 const {handleSocketConnection} = require('./controllers/socket')
 handleSocketConnection(io)

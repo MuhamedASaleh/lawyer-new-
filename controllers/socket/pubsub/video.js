@@ -484,17 +484,108 @@
 // };  
 
 // module.exports = video; 
+// const onlineUsers = {}; // To track online users by socket ID
+// const rooms = {}; // To store rooms and socket IDs
+
+// const video = (socket, io) => { 
+//   // Handle user joining and tracking online users
+//   socket.on('join', (username) => {
+//     onlineUsers[socket.id] = username;
+//     io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
+//     console.log(`${username} joined. Online users:`, onlineUsers);
+//   }); 
+   
+//   // Handle starting a call by creating/joining a room
+//   socket.on('startCall', (calleeSocketId) => {
+//     if (onlineUsers[calleeSocketId]) {
+//       const roomId = `${socket.id}-${calleeSocketId}`;
+//       rooms[roomId] = [socket.id, calleeSocketId];
+//       socket.join(roomId);
+//       io.to(calleeSocketId).emit('incomingCall', {
+//         caller: onlineUsers[socket.id],
+//         callerSocketId: socket.id,
+//         roomId,
+//       });
+//     }
+//   });
+
+//   // Handle accepting a call and joining the room
+//   socket.on('acceptCall', ({ roomId }) => {
+//     if (rooms[roomId]) {
+//       socket.join(roomId);
+//       io.to(roomId).emit('callAccepted', { roomId });
+//     } 
+//   }); 
+
+//   // Handle video chat offer
+//   socket.on('videoChatOffer', ({ sdp, roomId }) => {
+//     const room = rooms[roomId];
+//     if (room) {
+//       const otherUser = room.find(id => id !== socket.id);
+//       if (otherUser) {
+//         io.to(otherUser).emit('getVideoChatOffer', { sdp });
+//       }
+//     }
+//   });
+
+//   // Handle video chat answer
+//   socket.on('videoChatAnswer', ({ sdp, roomId }) => {
+//     const room = rooms[roomId];
+//     if (room) {
+//       const otherUser = room.find(id => id !== socket.id);
+//       if (otherUser) {
+//         io.to(otherUser).emit('getVideoChatAnswer', { sdp });
+//       }
+//     }
+//   });
+
+//   // Handle ICE candidates
+//   socket.on('candidate', ({ candidate, roomId }) => {
+//     const room = rooms[roomId];
+//     if (room) {
+//       const otherUser = room.find(id => id !== socket.id);
+//       if (otherUser) {
+//         io.to(otherUser).emit('getCandidate', candidate);
+//       }
+//     }
+//   });
+
+//   // Handle user disconnection
+//   socket.on('disconnect', () => {
+//     console.log('A user disconnected:', socket.id);
+//     delete onlineUsers[socket.id];
+//     io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
+
+//     for (const roomId in rooms) {
+//       rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
+//       if (rooms[roomId].length === 0) {
+//         delete rooms[roomId];
+//       } else {
+//         io.to(roomId).emit('userLeft');
+//       }
+//     }
+//   });
+// };
+
+// module.exports = video;
+//  ==========================================================================
+
+// Authentication middleware for Socket.IO
+
+
+
 const onlineUsers = {}; // To track online users by socket ID
 const rooms = {}; // To store rooms and socket IDs
 
-const video = (socket, io) => { 
-  // Handle user joining and tracking online users
-  socket.on('join', (username) => {
-    onlineUsers[socket.id] = username;
-    io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
-    console.log(`${username} joined. Online users:`, onlineUsers);
-  });
-   
+const video = (socket, io) => {
+  // Generate a unique identifier for the user
+  const userId = socket.id; // You can use socket.id or generate a unique ID if needed
+  onlineUsers[userId] = `User_${userId.substring(0, 6)}`; // Generate a simple username or ID
+
+  // Emit the updated user list to all clients
+  io.emit('updateUserList', Object.entries(onlineUsers).map(([id, name]) => ({ id, name })));
+  console.log(`User ${userId} joined. Online users:`, onlineUsers);
+  
   // Handle starting a call by creating/joining a room
   socket.on('startCall', (calleeSocketId) => {
     if (onlineUsers[calleeSocketId]) {
@@ -515,7 +606,7 @@ const video = (socket, io) => {
       socket.join(roomId);
       io.to(roomId).emit('callAccepted', { roomId });
     } 
-  }); 
+  });
 
   // Handle video chat offer
   socket.on('videoChatOffer', ({ sdp, roomId }) => {
@@ -565,7 +656,6 @@ const video = (socket, io) => {
       }
     }
   });
-};
+}; 
 
 module.exports = video;
- 

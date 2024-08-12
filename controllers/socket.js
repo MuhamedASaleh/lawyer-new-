@@ -7,9 +7,11 @@ exports.handleSocketConnection = function (io) {
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
 
+  
+
         user(socket, io);
         video(socket, io);
-       
+
         socket.on('disconnect', () => {
             console.log('User disconnected');
         });
