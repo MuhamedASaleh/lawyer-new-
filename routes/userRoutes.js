@@ -30,5 +30,5 @@ router.get('/current/profile', Auth, getProfile);
 router.put('/current/profile', Auth, updateProfile);
 router.get('/cases/user' ,Auth ,  getUserCases);
 
-
+    
 module.exports = router;
