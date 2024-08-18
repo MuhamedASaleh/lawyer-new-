@@ -7,6 +7,14 @@ const Admin = sequelize.define('Admin', {
         autoIncrement: true,
         primaryKey: true
     },
+    first_name: {
+        type: DataTypes.STRING(50),
+        allowNull: false
+      },
+      last_name: {
+        type: DataTypes.STRING(50),
+        allowNull: false
+      },
     national_number: {
         type: DataTypes.STRING(20),
         unique: false,

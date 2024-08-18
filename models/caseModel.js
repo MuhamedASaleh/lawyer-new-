@@ -16,12 +16,13 @@ const Case = sequelize.define('case', {
       'completed',
       'won',
       'lost',
-      'pending',
+      'pendingOne',
+      'pendingTwo',
       'accepted',
       'decline'
     ],
     allowNull: false,
-    defaultValue: 'pending'
+    defaultValue: 'pendingOne'
   },
   statusHistory: {
     type: DataTypes.JSON,

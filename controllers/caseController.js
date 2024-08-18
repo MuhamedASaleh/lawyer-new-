@@ -16,8 +16,8 @@ exports.createCase = async (req, res) => {
       judge_name,
       lawyer_fees,
       court_fees,
-      status: 'pending',
-      statusHistory: [{ status: 'pending', start: now, end: null }],
+      status: 'pendingOne',
+      statusHistory: [{ status: 'pendingOne', start: now, end: null }],
       lawyerId: req.user.id,
       customerId: req.user.id // Modify this as needed to get the correct customer ID
     });

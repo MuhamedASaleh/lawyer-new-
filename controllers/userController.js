@@ -312,7 +312,7 @@ exports.getUserById = asyncHandler(async (req, res) => {
     const totalReviews = reviews.length;
 
     // Initialize counts for each star rating
-    const starCounts = Array(6).fill(0);
+    const starCounts = Array(5).fill(0);
 
     // Sum ratings and count each star rating
     let sumRatings = 0;

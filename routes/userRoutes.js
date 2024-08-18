@@ -25,7 +25,7 @@ router.patch('/:id/status' , Auth ,  AuthorizeRole('admin') ,userController.upda
 router.get('/lawyers', userController.getAllLawyers);
 router.get('/:id', Auth, userController.getUserById);
 router.put('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id', userController.deleteUser);  // upload on postman 
 router.get('/current/profile', Auth, getProfile);
 router.put('/current/profile', Auth, updateProfile);
 
