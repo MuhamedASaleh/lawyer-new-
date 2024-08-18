@@ -78,9 +78,9 @@ exports.registerUser = async (req, res) => {
       confirm_password: hashedPassword,
       national_number,
       specializations,
-      certification,
+      certification: req.files['certification'] ? req.files['certification'][0].path : certification,
       status: userStatus,
-      personal_image: req.file ? req.file.buffer : null
+      personal_image: req.files['personal_image'] ? req.files['personal_image'][0].path : null
     });
 
     const token = jwt.sign({ id: newUser.userID, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
