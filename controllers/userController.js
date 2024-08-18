@@ -2,7 +2,7 @@
 // const { Sequelize, Op, fn, col, literal } = require('sequelize');
 const User = require('../models/userModel');
 const userValidator = require('../Validations/userValidator');
-const { Sequelize , Op, fn, col, literal } = require('sequelize');
+const { Sequelize, Op, fn, col, literal } = require('sequelize');
 const asyncHandler = require(`express-async-handler`);
 const { Review, Case } = require('../Associations/associations');
 const sequelize = require('../config/dbConfig');
@@ -14,7 +14,7 @@ const sequelize = require('../config/dbConfig');
 //   const sort = req.query.sort || "DESC";
 //   const offset = (page - 1) * limit;
 
- 
+
 //   const where = {};
 //   if (specializations) {
 //     // Convert comma-separated string to an array
@@ -223,8 +223,8 @@ exports.getLawyersByStatusAccept = asyncHandler(async (req, res) => {
   const order = sort === 'top'
     ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'DESC']] // Top-rated lawyers
     : sort === 'low'
-    ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
-    : [['createdAt', sort]]; // Default order by creation date
+      ? [[{ model: Review, as: 'LawyerReviews' }, 'rating', 'ASC']] // Low-rated lawyers
+      : [['createdAt', sort]]; // Default order by creation date
 
   try {
     const { count, rows } = await User.findAndCountAll({
@@ -847,3 +847,54 @@ exports.getCustomerCountsByMonth = async (req, res) => {
   }
 };
 
+
+exports.getUserCases = asyncHandler(async (req, res) => {
+
+  const statuses = [
+    'inspection',
+    'court',
+    'pleadings',
+    'completed'
+  ];
+
+  const cases = await Case.findAll({
+    where: {
+      status: statuses,
+      [Op.or]: [
+        { lawyerId: req.user.id },
+        { customerId: req.user.id }
+      ]
+    }
+  });
+  const thelastVersion = cases.map(caseItem => {
+    const newcaseHistory = []; // Reset newcaseHistory for each case
+
+    caseItem.statusHistory.forEach(history => {
+      const startDate = new Date(history.start);
+      const endDate = history.end ? new Date(history.end) : null;
+
+      const startMonthYear = `${startDate.getMonth() + 1}/${startDate.getFullYear()}`;
+      const endMonthYear = endDate ? `${endDate.getMonth() + 1}/${endDate.getFullYear()}` : 'Ongoing';
+
+      if (startMonthYear === endMonthYear || endDate === null) {
+        newcaseHistory.push({ start: history.start, end: history.end, status: history.status });
+      }
+      else {
+        // Push start and end separately when they don't fall in the same month/year
+        newcaseHistory.push({
+          one: { start: history.start, status: history.status },
+          two: { end: history.end, status: history.status }
+        }
+        );
+      }
+
+    });
+
+    // Update the statusHistory for the current case
+    caseItem.statusHistory = newcaseHistory;
+    return caseItem; // Return the modified caseItem
+  });
+
+  console.log(thelastVersion);
+  res.status(200).json({ message: thelastVersion });
+});
