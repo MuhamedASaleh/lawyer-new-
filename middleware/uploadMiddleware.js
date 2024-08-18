@@ -4,11 +4,13 @@ const path = require('path');
 // Set up storage engine
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../images')); // Destination folder for uploaded files
+    // Destination folder for uploaded files
+    cb(null, path.join(__dirname, '../images'));
   },
   filename: (req, file, cb) => {
     // Use original file name and timestamp for uniqueness
-    cb(null, Date.now() + path.extname(file.originalname));
+    const fileName = Date.now() + path.extname(file.originalname);
+    cb(null, fileName);
   }
 });
 

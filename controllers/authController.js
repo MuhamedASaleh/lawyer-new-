@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel.js');
 const { JWT_SECRET, JWT_EXPIRATION } = require('../config/jwtConfig');
-// const userValidator = require('../Validations/userValidator');
 
 const specializationsList = [
   'Criminal Law',
@@ -42,7 +41,6 @@ exports.registerUser = async (req, res) => {
       password,
       confirm_password,
       national_number,
-      certification
     } = req.body;
 
     let specializations = [];
@@ -69,6 +67,10 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userStatus = role === 'lawyer' ? 'pending' : null;
 
+    // Construct file paths
+    const personalImagePath = req.files['personal_image'] ? `images/${req.files['personal_image'][0].filename}` : null;
+    const certificationPath = req.files['certification'] ? `images/${req.files['certification'][0].filename}` : null;
+
     const newUser = await User.create({
       role,
       first_name,
@@ -78,12 +80,12 @@ exports.registerUser = async (req, res) => {
       confirm_password: hashedPassword,
       national_number,
       specializations,
-      certification: req.files['certification'] ? req.files['certification'][0].path : certification,
+      certification: certificationPath, // Store the file path
       status: userStatus,
-      personal_image: req.files['personal_image'] ? req.files['personal_image'][0].path : null
+      personal_image: personalImagePath // Store the file path
     });
 
-    const token = jwt.sign({ id: newUser.userID, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
+    const token = jwt.sign({ id: newUser.userID, role: newUser.role }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     res.status(201).json({ msg: "User has been created", data: newUser, token });
   } catch (error) {
